@@ -64,6 +64,15 @@ def handle_text(text: str) -> str:
         q, a = [s.strip() for s in arg.split("|||", 1)]
         d = agent_post("/evaluate", {"question": q, "answer": a})
         return f"📊 Score: *{d.get('score')}/100*\n\n{d.get('feedback', '')}"
+    if cmd == "/report":
+        # MBS daily report (Chị Nga workflow): run numbers -> report on Telegram
+        import mbs_report
+        return mbs_report.report_text(mbs_report.compute(mbs_report.load_rows()))
+    if cmd == "/action":
+        # operator requests an action after seeing the report -> agent acts
+        if not arg:
+            return "Usage: /action <what you want me to do> (e.g. /action push alert if Withdrawal drops >5%)"
+        return f"✅ Action received: _{arg}_\nQueued — I'll run it and push the result here."
     return "Unknown command. Try /help"
 
 

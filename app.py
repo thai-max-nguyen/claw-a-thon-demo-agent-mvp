@@ -27,6 +27,15 @@ LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "").strip() or None
 LIVE = bool(LLM_API_KEY and LLM_BASE_URL and LLM_MODEL)
 
+# Per-role model selection (quality-first). Each role can be pinned to its best
+# GreenNode MaaS model; all fall back to LLM_MODEL if unset. Recommended:
+#   question -> gemini/gemini-2.5-pro      (crisp question generation)
+#   chat     -> openai/gpt-5               (best coaching narrative)
+#   evaluate -> qwen/qwen3-235b-a22b-thinking-2507  (rigorous scoring)
+MODEL_QUESTION = os.getenv("MODEL_QUESTION", "").strip() or LLM_MODEL
+MODEL_CHAT = os.getenv("MODEL_CHAT", "").strip() or LLM_MODEL
+MODEL_EVALUATE = os.getenv("MODEL_EVALUATE", "").strip() or LLM_MODEL
+
 CATEGORIES = ["behavioral", "technical", "system-design", "hr"]
 
 app = FastAPI(
@@ -40,21 +49,23 @@ _SESSIONS: dict[str, list[dict]] = {}
 
 
 # ---------------- LLM call ----------------
-def _llm(system: str, user: str, max_tokens: int = 700) -> tuple[str, Optional[str]]:
-    """Return (text, model). Falls back to a stub when no key is configured."""
+def _llm(system: str, user: str, max_tokens: int = 700, model: Optional[str] = None) -> tuple[str, Optional[str]]:
+    """Return (text, model). Falls back to a stub when no key is configured.
+    `model` lets each role pick its quality-tuned model; defaults to LLM_MODEL."""
+    use_model = model or LLM_MODEL
     if not LIVE:
         return (f"[stub — set LLM_API_KEY to enable live model] {user}", None)
     try:
         from openai import OpenAI
         client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
         r = client.chat.completions.create(
-            model=LLM_MODEL,
+            model=use_model,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
             max_tokens=max_tokens,
             temperature=0.7,
         )
-        return (r.choices[0].message.content.strip(), LLM_MODEL)
+        return (r.choices[0].message.content.strip(), use_model)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LLM upstream error: {type(e).__name__}: {e}")
 
@@ -108,7 +119,7 @@ def question(req: QuestionReq):
     sid = req.session_id or str(uuid.uuid4())
     sys = ("You are an expert technical interviewer. Generate ONE concise, realistic "
            f"{req.category} interview question for a {req.role} candidate. Question only, no preamble.")
-    text, model = _llm(sys, f"Generate one {req.category} question for a {req.role}.", max_tokens=120)
+    text, model = _llm(sys, f"Generate one {req.category} question for a {req.role}.", max_tokens=120, model=MODEL_QUESTION)
     _remember(sid, "interviewer", text)
     return {"status": "success" if LIVE else "stub", "session_id": sid,
             "category": req.category, "role": req.role, "question": text, "model": model}
@@ -122,7 +133,7 @@ def chat(req: ChatReq):
     _remember(sid, "candidate", req.message)
     sys = ("You are an interview coach. Give a structured, actionable model answer to the "
            "candidate's interview question. Use the STAR method where relevant and add one short coaching tip.")
-    text, model = _llm(sys, req.message)
+    text, model = _llm(sys, req.message, model=MODEL_CHAT)
     _remember(sid, "coach", text)
     return {"status": "success" if LIVE else "stub", "session_id": sid, "answer": text, "model": model}
 
@@ -134,12 +145,13 @@ def evaluate(req: EvaluateReq):
     sys = ("You are a strict interview grader. Score the candidate's answer 0-100 and give 2-3 bullet "
            "points of feedback. Start your reply with 'SCORE: <n>/100' on the first line, then the feedback.")
     user = f"Question: {req.question}\n\nCandidate answer: {req.answer}"
-    text, model = _llm(sys, user, max_tokens=400)
+    text, model = _llm(sys, user, max_tokens=700, model=MODEL_EVALUATE)
     score = None
-    first = text.splitlines()[0] if text else ""
-    if "SCORE:" in first.upper():
-        digits = "".join(c for c in first.split(":", 1)[-1] if c.isdigit() or c == "/").split("/")[0]
-        score = int(digits) if digits.isdigit() else None
+    # scan ALL lines for "SCORE: n" — reasoning models may emit preamble first
+    import re as _re
+    m = _re.search(r"SCORE:\s*(\d{1,3})", text, _re.IGNORECASE)
+    if m:
+        score = min(int(m.group(1)), 100)
     elif not LIVE:
         score = 0
     _remember(req.session_id, "grader", text)

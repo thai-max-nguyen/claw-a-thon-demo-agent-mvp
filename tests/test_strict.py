@@ -1,0 +1,121 @@
+"""Strict real-data tests — run against the LIVE GreenNode MaaS model.
+
+Asserts real behavior, not just status codes:
+  - /question returns a non-stub, non-empty question
+  - /chat returns a substantive coaching answer
+  - /evaluate grades a STRONG answer high and a WEAK answer low (real grading)
+  - session memory persists across calls
+  - validation errors return 400/404
+  - telegram router maps commands -> agent calls correctly (via live agent)
+
+Run:  LLM_*=... pytest -q tests/test_strict.py
+Requires the live env vars set; skips the grading-spread test in stub mode.
+"""
+import os
+import sys
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import app as agentapp  # noqa: E402
+import telegram_bot as tg  # noqa: E402
+
+client = TestClient(agentapp.app)
+LIVE = agentapp.LIVE
+
+
+def test_health():
+    r = client.get("/health")
+    assert r.status_code == 200 and r.json() == {"status": "ok"}
+
+
+def test_root_metadata():
+    d = client.get("/").json()
+    assert d["mode"] == ("live" if LIVE else "stub")
+    assert set(agentapp.CATEGORIES) == {"behavioral", "technical", "system-design", "hr"}
+
+
+def test_question_real():
+    d = client.post("/question", json={"category": "technical", "role": "Backend Engineer"}).json()
+    assert d["category"] == "technical"
+    assert len(d["question"].strip()) > 15
+    if LIVE:
+        assert d["status"] == "success" and "[stub" not in d["question"]
+
+
+def test_chat_real():
+    d = client.post("/chat", json={"message": "How do you handle conflict on a team?"}).json()
+    assert len(d["answer"].strip()) > 30
+    if LIVE:
+        assert d["status"] == "success" and "[stub" not in d["answer"]
+
+
+def test_question_bad_category():
+    assert client.post("/question", json={"category": "nope"}).status_code == 400
+
+
+def test_chat_empty():
+    assert client.post("/chat", json={"message": "   "}).status_code == 400
+
+
+def test_evaluate_validation():
+    assert client.post("/evaluate", json={"question": "Q?", "answer": ""}).status_code == 400
+
+
+def test_session_memory():
+    sid = f"strict-{uuid.uuid4().hex[:8]}"
+    client.post("/question", json={"category": "hr", "role": "PM", "session_id": sid})
+    client.post("/chat", json={"message": "Why do you want this job?", "session_id": sid})
+    turns = client.get(f"/session/{sid}").json()["turns"]
+    assert len(turns) >= 2
+    roles = [t["role"] for t in turns]
+    assert "interviewer" in roles and "coach" in roles
+    # clear
+    assert client.delete(f"/session/{sid}").json()["cleared"] is True
+    assert client.get(f"/session/{sid}").status_code == 404
+
+
+def test_session_missing():
+    assert client.get("/session/does-not-exist").status_code == 404
+
+
+@pytest.mark.skipif(not LIVE, reason="grading spread needs the live model")
+def test_evaluate_grading_spread():
+    q = "Tell me about a time you led a project under pressure."
+    strong = ("Situation: our launch was moved up two weeks. Task: ship marketing assets without "
+              "burning out the team. Action: I re-prioritised the backlog, set hourly milestones, "
+              "and froze non-urgent requests. Result: we delivered 24h early and lead-gen rose 15%.")
+    weak = "I don't know, I just did it somehow."
+    s_strong = client.post("/evaluate", json={"question": q, "answer": strong}).json()["score"]
+    s_weak = client.post("/evaluate", json={"question": q, "answer": weak}).json()["score"]
+    assert isinstance(s_strong, int) and isinstance(s_weak, int)
+    assert s_strong >= 60, f"strong STAR answer scored too low: {s_strong}"
+    assert s_weak <= 40, f"weak answer scored too high: {s_weak}"
+    assert s_strong > s_weak
+
+
+def test_telegram_router_help():
+    assert "/question" in tg.handle_text("/help")
+    assert tg.handle_text("/ask@mbs_analysis_bot") == "Usage: /ask <your interview question>"
+    assert tg.handle_text("just chatter") == ""  # privacy: ignore non-commands
+
+
+@pytest.mark.skipif(not LIVE, reason="router live calls need the model")
+def test_telegram_router_ask_live():
+    # router calls the agent over HTTP; point it at the in-process app via monkeypatch
+    out = {}
+
+    def fake_post(path, payload):
+        return client.post(path, json=payload).json()
+
+    orig = tg.agent_post
+    tg.agent_post = fake_post
+    try:
+        reply = tg.handle_text("/ask What is your greatest weakness?")
+        assert len(reply.strip()) > 30 and "[stub" not in reply
+        evrep = tg.handle_text("/evaluate Why us? ||| Because I admire the mission and want to grow.")
+        assert "Score:" in evrep
+    finally:
+        tg.agent_post = orig

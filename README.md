@@ -1,72 +1,56 @@
-# claw-a-thon-demo-agent — Interview Q&A Agent
+# Interview Q&A Agent — GreenNode AgentBase (Claw-a-thon Nhóm 2)
 
-A minimal **Interview Q&A** Custom Agent for GreenNode AgentBase, built with
-**FastAPI**. Send an interview question; get a concise, interview-style model
-answer (STAR method for behavioral questions). The model is served by an
-OpenAI-compatible endpoint (GreenNode MaaS), configured via environment variables.
+A Custom Agent for **GreenNode AgentBase**: generates interview questions, gives
+STAR-method coaching answers, and scores candidate answers — backed by an
+OpenAI-compatible LLM (GreenNode MaaS).
 
 ## Endpoints
 
-| Method | Path      | Body                | Response |
-|--------|-----------|---------------------|----------|
-| GET    | `/health` | —                   | `{"status": "ok"}` (200) |
-| POST   | `/chat`   | `{"message": "..."}`| `{"status": "...", "answer": "...", "model": "..."}` |
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/health` | Liveness probe → `{"status":"ok"}` (200) |
+| GET | `/` | Agent metadata + capabilities |
+| POST | `/question` | Generate an interview question (`category`, `role`) |
+| POST | `/chat` | Coaching model-answer to an interview question |
+| POST | `/evaluate` | Score a candidate answer 0–100 + feedback |
+| GET | `/session/{sid}` | Retrieve a session's Q&A history |
+| DELETE | `/session/{sid}` | Clear a session |
 
-If `LLM_API_KEY` is unset/empty the agent runs in **stub mode** and returns
-`[stub — set LLM_API_KEY to enable live model] You asked: <message>` so the app
-runs and tests pass without a key. The app uses the `openai` package if available,
-otherwise raw `requests`, and degrades gracefully on any LLM/transport error.
-
-## Environment variables
-
-| Variable       | Description |
-|----------------|-------------|
-| `LLM_BASE_URL` | OpenAI-compatible base URL, e.g. `https://maas-llm-aiplatform-hcm.api.vngcloud.vn/v1` |
-| `LLM_API_KEY`  | GreenNode MaaS API key. Empty → stub mode. |
-| `LLM_MODEL`    | Model id, e.g. `Qwen2.5-7B-Instruct`. |
-
-Copy `.env.example` to `.env` and fill in the values.
+Categories: `behavioral`, `technical`, `system-design`, `hr`.
 
 ## Run locally
 
 ```bash
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env          # optional — leave LLM_API_KEY empty for stub mode
+# stub mode (no key) — service boots, /health 200, /chat returns a stub
 uvicorn app:app --host 0.0.0.0 --port 8080
 ```
 
-Health check:
+### Live model (GreenNode MaaS)
+
+Set the three env vars (see `.env.example`), then run as above:
 
 ```bash
-curl http://127.0.0.1:8080/health        # -> {"status":"ok"}
+export LLM_BASE_URL="https://maas-llm-aiplatform-hcm.api.vngcloud.vn/v1"
+export LLM_API_KEY="<your MaaS API key>"
+export LLM_MODEL="google/gemma-4-31b-it"   # or another enabled model
 ```
 
-Ask a question:
+## Test
 
 ```bash
-curl -X POST http://127.0.0.1:8080/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Tell me about a time you handled conflict"}'
+bash tests/smoke.sh          # boots the app + checks every endpoint
 ```
 
-## Run with Docker
+## Deploy
 
-```bash
-docker build -t claw-a-thon-demo-agent .
-docker run -p 8080:8080 --env-file .env claw-a-thon-demo-agent
+See **[DEPLOY_RUNBOOK.md](./DEPLOY_RUNBOOK.md)** — the GreenNode AgentBase deploy
+steps (portal login, `/agentbase-deploy`, verify ACTIVE, public endpoint).
+
+## Example (live)
+
 ```
-
-The container listens on port **8080** (required by AgentBase).
-
-## Deploy to AgentBase
-
-See **[DEPLOY_RUNBOOK.md](./DEPLOY_RUNBOOK.md)** for the full deploy runbook
-(portal login, registry, build/push, runtime create, health verification).
-
-## Project structure
-
-- `app.py` — FastAPI app (`/health` + `/chat`)
-- `requirements.txt` — deps (fastapi, uvicorn, openai, requests, python-dotenv)
-- `Dockerfile` — container image (python:3.11-slim, port 8080)
-- `.env.example` — env var template
+POST /chat  {"message":"Tell me about a time you handled a tight deadline."}
+→ 200  {"status":"success","answer":"…STAR-method model answer…","model":"google/gemma-4-31b-it"}
+```

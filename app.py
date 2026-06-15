@@ -1,140 +1,160 @@
 """Interview Q&A Custom Agent — FastAPI app for GreenNode AgentBase.
 
-Endpoints:
-  GET  /health  -> {"status": "ok"}  (200)  — AgentBase health probe
-  POST /chat    -> {"message": "..."} -> interview-style Q&A answer
+Full version. Endpoints:
+  GET  /health                 -> liveness probe (200)
+  GET  /                       -> agent metadata + capabilities
+  POST /question               -> generate an interview question (by category/role)
+  POST /chat                   -> coaching answer to an interview question
+  POST /evaluate               -> score a candidate's answer (0-100) + feedback
+  GET  /session/{sid}          -> retrieve a session's Q&A history
+  DELETE /session/{sid}        -> clear a session
 
-The LLM is an OpenAI-compatible endpoint (GreenNode MaaS), configured via:
-  LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
-
-If LLM_API_KEY is unset/empty the app returns a clear stub answer so it runs
-(and tests pass) WITHOUT a key. Uses the `openai` package if available, else
-falls back to raw `requests`; degrades gracefully if neither is present.
+LLM: OpenAI-compatible (GreenNode MaaS). Configured via env:
+  LLM_BASE_URL, LLM_API_KEY, LLM_MODEL.
+If LLM_API_KEY is empty, every LLM-backed route degrades to a deterministic
+stub so the service still boots, /health stays 200, and tests pass with no key.
 """
-
 import os
+import time
+import uuid
+from typing import Optional
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
-try:
-    from dotenv import load_dotenv
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").rstrip("/")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
+LLM_MODEL = os.getenv("LLM_MODEL", "").strip() or None
+LIVE = bool(LLM_API_KEY and LLM_BASE_URL and LLM_MODEL)
 
-    load_dotenv()
-except Exception:  # pragma: no cover - dotenv is optional at runtime
-    pass
+CATEGORIES = ["behavioral", "technical", "system-design", "hr"]
 
-app = FastAPI(title="Interview Q&A Agent", version="1.0.0")
-
-# LLM config — GreenNode MaaS (OpenAI-compatible). On AgentBase Runtime these
-# are injected from the runtime env file.
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "").strip()
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "").strip()
-LLM_MODEL = os.environ.get("LLM_MODEL", "").strip()
-
-SYSTEM_PROMPT = (
-    "You are an Interview Q&A coach. The user is preparing for a job interview. "
-    "Given an interview question, give a concise, well-structured model answer. "
-    "If the question is behavioral, use the STAR method (Situation, Task, Action, "
-    "Result). Keep answers under 200 words and practical."
+app = FastAPI(
+    title="Interview Q&A Agent",
+    version="1.0.0",
+    description="Interview question generation, coaching, and answer scoring on GreenNode AgentBase.",
 )
 
-
-class ChatRequest(BaseModel):
-    message: str = ""
-
-
-def _stub_answer(message: str) -> str:
-    return f"[stub — set LLM_API_KEY to enable live model] You asked: {message}"
+# In-memory session store: {session_id: [{"role","content","ts"}]}
+_SESSIONS: dict[str, list[dict]] = {}
 
 
-def _call_llm(message: str) -> str:
-    """Call the OpenAI-compatible LLM. Tries `openai` SDK, then raw `requests`.
-
-    Raises on transport/API errors so the caller can surface them.
-    """
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": message},
-    ]
-
-    # Preferred path: official OpenAI SDK (OpenAI-compatible base_url).
+# ---------------- LLM call ----------------
+def _llm(system: str, user: str, max_tokens: int = 700) -> tuple[str, Optional[str]]:
+    """Return (text, model). Falls back to a stub when no key is configured."""
+    if not LIVE:
+        return (f"[stub — set LLM_API_KEY to enable live model] {user}", None)
     try:
         from openai import OpenAI
-    except Exception:
-        OpenAI = None  # type: ignore
-
-    if OpenAI is not None:
-        client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL or None)
-        completion = client.chat.completions.create(
-            model=LLM_MODEL or "gpt-3.5-turbo",
-            messages=messages,
-            temperature=0.4,
-            max_tokens=600,
+        client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+        r = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": user}],
+            max_tokens=max_tokens,
+            temperature=0.7,
         )
-        return (completion.choices[0].message.content or "").strip()
-
-    # Fallback path: raw HTTP via requests.
-    import requests
-
-    base = (LLM_BASE_URL or "https://api.openai.com/v1").rstrip("/")
-    resp = requests.post(
-        f"{base}/chat/completions",
-        headers={
-            "Authorization": f"Bearer {LLM_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": LLM_MODEL or "gpt-3.5-turbo",
-            "messages": messages,
-            "temperature": 0.4,
-            "max_tokens": 600,
-        },
-        timeout=60,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return (data["choices"][0]["message"]["content"] or "").strip()
+        return (r.choices[0].message.content.strip(), LLM_MODEL)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM upstream error: {type(e).__name__}: {e}")
 
 
+def _remember(sid: Optional[str], role: str, content: str) -> None:
+    if not sid:
+        return
+    _SESSIONS.setdefault(sid, []).append({"role": role, "content": content, "ts": int(time.time())})
+
+
+# ---------------- models ----------------
+class QuestionReq(BaseModel):
+    category: str = Field(default="behavioral", description="behavioral|technical|system-design|hr")
+    role: str = Field(default="Product Manager", description="target job role")
+    session_id: Optional[str] = None
+
+
+class ChatReq(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+
+class EvaluateReq(BaseModel):
+    question: str
+    answer: str
+    session_id: Optional[str] = None
+
+
+# ---------------- routes ----------------
 @app.get("/health")
-def health() -> dict:
-    """Health probe required by AgentBase to mark the runtime ACTIVE."""
+def health():
     return {"status": "ok"}
 
 
+@app.get("/")
+def root():
+    return {
+        "agent": "Interview Q&A Agent",
+        "version": "1.0.0",
+        "live_model": LLM_MODEL if LIVE else None,
+        "mode": "live" if LIVE else "stub",
+        "categories": CATEGORIES,
+        "endpoints": ["/health", "/question", "/chat", "/evaluate", "/session/{sid}"],
+    }
+
+
+@app.post("/question")
+def question(req: QuestionReq):
+    if req.category not in CATEGORIES:
+        raise HTTPException(status_code=400, detail=f"category must be one of {CATEGORIES}")
+    sid = req.session_id or str(uuid.uuid4())
+    sys = ("You are an expert technical interviewer. Generate ONE concise, realistic "
+           f"{req.category} interview question for a {req.role} candidate. Question only, no preamble.")
+    text, model = _llm(sys, f"Generate one {req.category} question for a {req.role}.", max_tokens=120)
+    _remember(sid, "interviewer", text)
+    return {"status": "success" if LIVE else "stub", "session_id": sid,
+            "category": req.category, "role": req.role, "question": text, "model": model}
+
+
 @app.post("/chat")
-def chat(req: ChatRequest) -> dict:
-    """Return an interview-style Q&A answer for the posted message."""
-    message = (req.message or "").strip()
-    if not message:
-        return {
-            "status": "error",
-            "error": "Field 'message' is required.",
-            "model": LLM_MODEL or None,
-        }
-
-    # No key configured → graceful stub so the app runs without a live model.
-    if not LLM_API_KEY:
-        return {
-            "status": "stub",
-            "answer": _stub_answer(message),
-            "model": LLM_MODEL or None,
-        }
-
-    try:
-        answer = _call_llm(message)
-        return {"status": "success", "answer": answer, "model": LLM_MODEL or None}
-    except Exception as exc:  # degrade gracefully on any LLM/transport error
-        return {
-            "status": "error",
-            "error": f"LLM call failed: {exc}",
-            "answer": _stub_answer(message),
-            "model": LLM_MODEL or None,
-        }
+def chat(req: ChatReq):
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="message must not be empty")
+    sid = req.session_id
+    _remember(sid, "candidate", req.message)
+    sys = ("You are an interview coach. Give a structured, actionable model answer to the "
+           "candidate's interview question. Use the STAR method where relevant and add one short coaching tip.")
+    text, model = _llm(sys, req.message)
+    _remember(sid, "coach", text)
+    return {"status": "success" if LIVE else "stub", "session_id": sid, "answer": text, "model": model}
 
 
-if __name__ == "__main__":
-    import uvicorn
+@app.post("/evaluate")
+def evaluate(req: EvaluateReq):
+    if not req.question.strip() or not req.answer.strip():
+        raise HTTPException(status_code=400, detail="question and answer are required")
+    sys = ("You are a strict interview grader. Score the candidate's answer 0-100 and give 2-3 bullet "
+           "points of feedback. Start your reply with 'SCORE: <n>/100' on the first line, then the feedback.")
+    user = f"Question: {req.question}\n\nCandidate answer: {req.answer}"
+    text, model = _llm(sys, user, max_tokens=400)
+    score = None
+    first = text.splitlines()[0] if text else ""
+    if "SCORE:" in first.upper():
+        digits = "".join(c for c in first.split(":", 1)[-1] if c.isdigit() or c == "/").split("/")[0]
+        score = int(digits) if digits.isdigit() else None
+    elif not LIVE:
+        score = 0
+    _remember(req.session_id, "grader", text)
+    return {"status": "success" if LIVE else "stub", "session_id": req.session_id,
+            "score": score, "feedback": text, "model": model}
 
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+@app.get("/session/{sid}")
+def get_session(sid: str):
+    if sid not in _SESSIONS:
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"session_id": sid, "turns": _SESSIONS[sid]}
+
+
+@app.delete("/session/{sid}")
+def clear_session(sid: str):
+    existed = _SESSIONS.pop(sid, None) is not None
+    return {"session_id": sid, "cleared": existed}

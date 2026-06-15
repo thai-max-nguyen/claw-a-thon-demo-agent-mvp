@@ -11,3 +11,8 @@ __pycache__/
 .git/
 .gitignore
 *.md
+tests/
+.env.example
+PLAN.md
+TEST_REPORT.md
+DEPLOY_RUNBOOK.md

@@ -55,19 +55,31 @@ def _llm(system: str, user: str, max_tokens: int = 700, model: Optional[str] = N
     use_model = model or LLM_MODEL
     if not LIVE:
         return (f"[stub — set LLM_API_KEY to enable live model] {user}", None)
-    try:
-        from openai import OpenAI
-        client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-        r = client.chat.completions.create(
-            model=use_model,
-            messages=[{"role": "system", "content": system},
-                      {"role": "user", "content": user}],
-            max_tokens=max_tokens,
-            temperature=0.7,
-        )
-        return (r.choices[0].message.content.strip(), use_model)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"LLM upstream error: {type(e).__name__}: {e}")
+    from openai import OpenAI, APIConnectionError, APITimeoutError, RateLimitError
+    client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=60)
+    # 2-retry exponential backoff on TRANSIENT errors only (connection/timeout/
+    # rate-limit). Lesson from reddit_get: a single upstream edge flake otherwise
+    # collapses the whole request even though the network is fine seconds later.
+    # Non-transient errors (bad model, 4xx) are NOT retried — fail fast as 502.
+    last = None
+    for attempt in range(3):
+        try:
+            r = client.chat.completions.create(
+                model=use_model,
+                messages=[{"role": "system", "content": system},
+                          {"role": "user", "content": user}],
+                max_tokens=max_tokens,
+                temperature=0.7,
+            )
+            return ((r.choices[0].message.content or "").strip(), use_model)
+        except (APIConnectionError, APITimeoutError, RateLimitError) as e:
+            last = e
+            if attempt < 2:
+                time.sleep(3 * (attempt + 1) ** 2)  # 3s, 12s
+                continue
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"LLM error: {type(e).__name__}: {e}")
+    raise HTTPException(status_code=502, detail=f"LLM upstream unavailable after retries: {type(last).__name__}")
 
 
 def _remember(sid: Optional[str], role: str, content: str) -> None:

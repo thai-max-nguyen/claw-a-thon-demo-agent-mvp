@@ -134,10 +134,10 @@ The agent thinks like a senior growth analyst — every output traces back to li
 ```mermaid
 flowchart TD
   D["📊 Live dashboard data"]
-  D --> F["Forecast, not guesswork<br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
-  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track, At Risk, Off Track"]
-  D --> A["4-tier anomaly radar<br/>Highlight, Normal, Watch, Alert<br/>cost metrics flip polarity: a rise is bad"]
-  F --> W["Explains WHY<br/>What · Where · Why on every finding<br/>e.g. new-payers a small share of first-payments"]
+  D --> F["Forecast not guesswork<br/>pace vs prior-month curve<br/>commits only when confident"]
+  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track · At Risk · Off Track"]
+  D --> A["4-tier anomaly radar<br/>Highlight · Normal · Watch · Alert<br/>cost metrics flip polarity"]
+  F --> W["Explains the WHY<br/>What · Where · Why per finding<br/>names the binding constraint"]
   H --> W
   A --> W
 ```
@@ -149,17 +149,6 @@ flowchart TD
 
 ### 🧬 How it targets: same users, different play
 This is the heart of it — the agent **doesn't blast one message**. It reads **each user's payment behavior**, routes them to the segment whose copy, channel and timing actually fit, then lets **risk tune the urgency**:
-
-```mermaid
-flowchart LR
-  U["Mobility user base"] --> B{"Payment behavior?"}
-  B -->|"never paid · high intent"| FPU["Acquisition · FPU"]
-  B -->|"paid last month, silent now"| RPU["Reactivation · RPU"]
-  B -->|"no ride 2+ months"| RSPU["Resurrection · RSPU"]
-  FPU --> PF["First-ride 50K<br/>push + Zalo OA · within 24h"]
-  RPU --> PR["Recall + value A/B<br/>push · 6PM / 11:30AM"]
-  RSPU --> PS["Win-back + 48h FOMO<br/>push · 7:30AM"]
-```
 
 | Behavior signal | Segment | Message angle (A/B copy) | Channel · send time |
 |---|---|---|---|
@@ -260,13 +249,12 @@ Today the agent is dashboard-bound — it only claims what the dashboards can pr
 ```mermaid
 flowchart LR
   A["4 Atlas dashboards"] --> B["Pull MTD"]
+  B --> G["Audit gate<br/>fail · abort and never send"]
   B --> C["Forecast · pacing"]
   C --> D["Anomalies · 4-tier"]
-  D --> E["Action plan · P1 Acquisition + P2 Reactivation"]
-  E --> F["CRM drafts · segment + A/B noti"]
-  B --> G{"Audit gate"}
-  G -- fail --> X["Abort · never send"]
-  G -- pass --> H["Telegram + Confluence"]
+  D --> E["Action plan<br/>P1 Acquisition · P2 Reactivation"]
+  E --> F["CRM drafts<br/>segment · A·B noti"]
+  G --> H["Telegram · Confluence"]
   F --> H
 ```
 

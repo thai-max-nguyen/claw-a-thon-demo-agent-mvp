@@ -147,16 +147,28 @@ flowchart TD
 - **Funnel-leak diagnosis** — NPU → FPU → RPU ratios → pinpoints the binding stage (*acquisition vs retention*) so it picks the right lever.
 - **Spend efficiency** — Discount ÷ TPV + refund rate per merchant → avoid pushing budget where it bleeds.
 
-### 🎯 How it picks the segment to target
-A 3-step funnel from "where's the money" to a ready CRM audience:
+### 🧬 How it targets: same users, different play
+This is the heart of it — the agent **doesn't blast one message**. It reads **each user's payment behavior**, routes them to the segment whose copy, channel and timing actually fit, then lets **risk tune the urgency**:
 
 ```mermaid
 flowchart LR
-  R["1 · Cover every merchant<br/>one campaign each<br/>momentum flags who to lean into"]
-  D["2 · Define the audience<br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
-  C["3 · Segment + tiered offer<br/>app-id include/exclude · est. size<br/>offer scaled to the gap, 50K vs 30K"]
-  R --> D --> C
+  U["Mobility user base"] --> B{"Payment behavior?"}
+  B -->|"never paid · high intent"| FPU["Acquisition · FPU"]
+  B -->|"paid last month, silent now"| RPU["Reactivation · RPU"]
+  B -->|"no ride 2+ months"| RSPU["Resurrection · RSPU"]
+  FPU --> PF["First-ride 50K<br/>push + Zalo OA · within 24h"]
+  RPU --> PR["Recall + value A/B<br/>push · 6PM / 11:30AM"]
+  RSPU --> PS["Win-back + 48h FOMO<br/>push · 7:30AM"]
 ```
+
+| Behavior signal | Segment | Message angle (A/B copy) | Channel · send time |
+|---|---|---|---|
+| Paid before, silent **this month** (lapsed, D1–30) | **Reactivation · RPU** | A: personal recall *"{first_name}, chưa đặt xe?"* · B: value *"giảm đến 50K"* | Push + Zalo OA · 6PM recall / 11:30AM value |
+| **No ride ≥ 2 months** (deep churn) | **Resurrection · RSPU** | A: *"lâu rồi không gặp"* + 48h FOMO · B: frictionless re-intro | Push · 7:30AM urgency |
+| High-intent, **never paid** Mobility | **Acquisition · FPU** | first-ride *"chuyến đầu giảm đến 50K"* | Push + Zalo OA · within 24h of intent |
+| Merchant **decelerating** (high churn risk) | escalate **intensity** | same segment, tighter trigger | D1–D3 · 48h window |
+
+**Behavior picks the segment → segment picks the copy + channel + send time → risk picks the urgency.** Offer *size* stays tied to the MPU gap (50K vs 30K, never inflated by risk), and every segment **excludes users already active this month** so spend never cannibalizes payers who'd have transacted anyway.
 
 ## 🧭 Every merchant gets a campaign — momentum tells you where to lean in
 

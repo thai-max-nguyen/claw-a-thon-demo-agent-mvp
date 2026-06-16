@@ -367,69 +367,76 @@ def build_report(biz, seg, merch, fc=None, actions=None):
     prev_m = f"{y-1}-12" if m == 1 else f"{y}-{m-1:02d}"
     cur_m = f"{y}-{m:02d}"
     L = []
-    L.append(f"📊 <b>MBS GROWTH · {time.strftime('%-d %b %Y')}</b>")
-    L.append(f"<i>MTD vs previous MTD · forecast = full month</i>")
-    L.append("")
-    # 1. MTD SNAPSHOT (MPU) — monospace table
-    L.append("1️⃣ <b>MTD SNAPSHOT</b> <i>· MPU</i>")
-    snap = [["", "now", "last", "Δ", "fc"],
+    RULE = "─────────────────────"
+    badge = ("🟢 ON TRACK" if (fc_reach or 0) >= 1 else
+             "🟡 AT RISK" if (fc_reach or 0) >= 0.92 else
+             "🔴 OFF TRACK") if fc_reach else "⚪ MTD"
+    # ---- masthead ----
+    L.append("<b>GROWTH ASSISTANT</b>  ·  MBS Mobility")
+    L.append(f"<i>{time.strftime('%-d %b %Y')}  ·  daily MTD review</i>")
+    L.append(RULE)
+    # ---- executive summary (verdict first) ----
+    L.append(f"<b>{badge}</b>")
+    if fc_reach:
+        L.append(f"MPU <b>{mpu:,}</b> → forecast <b>{_fmt(fc_mpu)}</b> · <b>{_pct(fc_reach)}</b> of {_fmt(tgt)} target")
+        L.append("Gap is <b>acquisition</b> (NPU flat) — lever is re-engaging lapsed payers.")
+    else:
+        L.append(f"MPU <b>{mpu:,}</b> MTD")
+    L.append(RULE)
+    # ---- 1 · MTD snapshot ----
+    L.append("📊 <b>MTD SNAPSHOT</b>   <i>MPU · now vs last MTD</i>")
+    snap = [["", "now", "last MTD", "Δ", "f'cast"],
             ["MBS", f"{mpu:,}", f"{last_mtd:,}" if last_mtd else "—",
              (biz["MPU"].get("delta") or "—").replace("▲ ", "").replace("▼ ", ""),
              _fmt(fc_mpu) if fc_mpu else "—"]]
     for label, v in merch.items():
-        snap.append([label, f"{v:,}", "—", "—", "—"])
+        snap.append([f"· {label}", f"{v:,}", "—", "—", "—"])
     L.append(_table(snap))
-    L.append("<i>merchant last/fc not split on dash</i>")
     L.append("")
-    # 2. SEGMENT HEALTH — monospace table
-    L.append("2️⃣ <b>SEGMENT HEALTH</b>")
-    health = [["segment", "Δ", "vs target", "risk"],
+    # ---- 2 · segment health ----
+    L.append("🩺 <b>SEGMENT HEALTH</b>")
+    health = [["segment", "Δ MTD", "vs target", "status"],
               ["MPU", (biz["MPU"].get("delta") or "—").replace("▲ ", "").replace("▼ ", ""),
                _pct(fc_reach) if fc_reach else "—", _risk_word(fc_reach)],
               ["FPU incl", (biz["FPU"].get("delta") or "—").replace("▲ ", "").replace("▼ ", ""),
                "—", "on track" if (biz["FPU"].get("change") or 0) >= 0.05 else "at risk"],
               ["NPU", (biz["NPU"].get("delta") or "—").replace("▲ ", "").replace("▼ ", ""),
                "—", "needs action"],
-              ["RPU", "—", f"{_pct(rpu/mpu)} MPU", "on track"]]
+              ["RPU", "—", f"{_pct(rpu/mpu)} of MPU", "on track"]]
     L.append(_table(health))
     L.append("")
-    # 3. TOP ANOMALIES — What / Where / Why (data-grounded)
-    L.append("3️⃣ <b>TOP ANOMALIES</b>")
+    # ---- 3 · top anomalies (What / Where / Why) ----
+    L.append("🔎 <b>TOP ANOMALIES</b>")
     L.append(f"🔴 <b>NPU flat</b> — {npu:,} ({(biz['NPU'].get('delta') or '').strip()})")
-    L.append(f"<i>where</i> MBS overall · <i>why</i> NPU only {_pct(npu/fpu)} of FPU {fpu:,} → first-payments are mostly existing users, net-new acquisition is the constraint")
+    L.append(f"      └ NPU is only {_pct(npu/fpu)} of FPU {fpu:,} → first-payments are mostly existing users; net-new acquisition is the constraint.")
     if fc_reach and fc_reach < 1:
         gap = round(tgt - fc_mpu)
-        L.append(f"🟡 <b>MPU pacing short</b> — fc {_fmt(fc_mpu)} = {_pct(fc_reach)} of target (~{gap:,} gap)")
-        L.append(f"<i>where</i> MBS · <i>why</i> with NPU flat, the gap rests on retention (RPU {_pct(rpu/mpu)} of MPU) which can't over-deliver")
+        L.append(f"🟡 <b>MPU pacing short</b> — f'cast {_fmt(fc_mpu)} = {_pct(fc_reach)} of target (~{gap:,} gap)")
+        L.append(f"      └ With NPU flat, the gap rests on retention (RPU {_pct(rpu/mpu)} of MPU), which can't over-deliver.")
     rf = biz.get("Refund")
     if rf and (rf.get("change") or 0) >= 0.05:
         rr = rf["value"] / biz["Transactions"]["value"] if biz["Transactions"]["value"] else None
         L.append(f"🚨 <b>Refund rising</b> — {_fmt(rf['value'])} ({(rf.get('delta') or '').strip()})"
-                 + (f", rate {_pct(rr)} of txns" if rr is not None else ""))
-        L.append(f"<i>where</i> MBS · <i>why</i> refund {(rf.get('delta') or '').strip()} &gt; transactions {(biz['Transactions'].get('delta') or '').strip()} → refund rate climbing, not just volume")
+                 + (f", {_pct(rr)} of txns" if rr is not None else ""))
+        L.append(f"      └ Refund {(rf.get('delta') or '').strip()} outpaces transactions {(biz['Transactions'].get('delta') or '').strip()} → refund rate climbing, not just volume.")
     L.append("")
-    # 4. ACTION PLAN — one per flagged lever/merchant (Step-D format)
-    L.append("4️⃣ <b>ACTION PLAN</b>")
+    # ---- 4 · action plan (one card per lever / merchant) ----
+    L.append("🎯 <b>ACTION PLAN</b>")
     for a in (actions or []):
-        head = f"<b>{a['priority']} · {a['type']}" + (f" · {a['merchant']}" if a.get('merchant') else "") + "</b>"
-        L.append(head)
-        L.append(f"   ├ Problem: {a['problem']}")
-        L.append(f"   ├ Target: {a['target']}")
-        L.append(f"   ├ Campaign: {a['type']} · {a['channel']} · {a['promo']}")
-        L.append(f"   └ KPI: {a['kpi']}")
-    L.append("")
-    # 5. CRM READY — segment spec per action
-    L.append("5️⃣ <b>CRM READY</b> <i>(segments — draft)</i>")
+        L.append(f"<b>{a['priority']} · {a['type']}" + (f" · {a['merchant']}" if a.get('merchant') else "") + "</b>")
+        L.append(f"   • <b>Problem</b> — {a['problem']}")
+        L.append(f"   • <b>Target</b> — {a['target']}")
+        L.append(f"   • <b>Campaign</b> — {a['channel']} · {a['promo']}")
+        L.append(f"   • <b>KPI</b> — {a['kpi']}")
+        L.append("")
+    # ---- 5 · CRM-ready ----
+    L.append("📥 <b>CRM-READY</b>   <i>segments · draft</i>")
     for a in (actions or []):
         s = a["segment"]
-        L.append(f"• <code>{s['name']}</code> — {s['conditions']} · size {s['est_size']}")
-    L.append("")
-    L.append(DIV)
-    if fc_reach:
-        verdict = ("✅ on track" if fc_reach >= 1 else
-                   f"🟡 slightly behind — fc {_pct(fc_reach)} of target" if fc_reach >= 0.92 else
-                   f"🔴 off track — fc {_pct(fc_reach)} of target")
-        L.append(f"📌 <b>Bottom line:</b> {verdict}. Gap = acquisition (NPU flat); lever = re-engage lapsed payers.")
+        L.append(f"• <code>{s['name']}</code>")
+        L.append(f"      {s['conditions']} · size {s['est_size']}")
+    L.append(RULE)
+    L.append("<i>Auto-generated by Growth Assistant — every number audited against the live dashboards.</i>")
     return "\n".join(L)
 
 

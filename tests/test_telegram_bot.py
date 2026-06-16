@@ -20,18 +20,28 @@ def test_confirm_requires_run_first():
     assert "/run" in out and "Nothing to confirm" in out
 
 
-def test_confirm_lists_real_draft_ids():
-    t.PENDING["actions"] = [
-        {"merchant": "Grab", "noti_name": "[MBS] Grab Noti_RPU_Grab_Churn", "segment": {"name": "g"}},
-        {"type": "Acquisition", "noti_name": "[MBS] Mobility Noti_NPU_MBS_Acq", "segment": {"name": "a"}},
-        {"merchant": "XANH SM", "noti_name": "[MBS] XANH SM ...", "segment": {"name": "x"}},
-        {"merchant": "Be", "noti_name": "[MBS] Be ...", "segment": {"name": "b"}},
-    ]
+def test_confirm_reports_embedded_content(monkeypatch):
+    # /confirm calls the full-auto CRM client; mock it to test the reply formatting offline.
+    import crm_client
+    monkeypatch.setattr(crm_client, "stage_drafts", lambda actions: [
+        {"id": 16550, "name": "[MBS] Grab ...", "title": "Đặt xe tháng này",
+         "body": "Thanh toán Grab...", "zpa": "zalopay://launch/app/2222", "zpi": "https://grb.to/Homepage"},
+    ])
+    t.PENDING["actions"] = [{"merchant": "Grab", "noti_name": "[MBS] Grab", "segment": {"name": "g"}}]
     out = t.handle_text("/confirm")
-    for nid in ("16550", "16559", "16560", "16561"):
-        assert nid in out
-    assert "DRAFT" in out and "INACTIVE" in out
-    assert "office.zalopay.vn" in out          # review link present
+    assert "16550" in out and "DRAFT" in out
+    assert "Title" in out and "Body" in out and "ZPA" in out      # embedded content shown
+    assert "office.zalopay.vn" in out                              # review link
+
+
+def test_confirm_handles_dead_session(monkeypatch):
+    import crm_client
+    def boom(actions):
+        raise crm_client.CrmSessionError("CRM session expired — refocus the CRM tab")
+    monkeypatch.setattr(crm_client, "stage_drafts", boom)
+    t.PENDING["actions"] = [{"merchant": "Grab", "segment": {"name": "g"}}]
+    out = t.handle_text("/confirm")
+    assert "⚠️" in out and "session" in out.lower()
 
 
 def test_unknown_command():

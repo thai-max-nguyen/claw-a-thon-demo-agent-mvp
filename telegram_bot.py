@@ -112,15 +112,25 @@ def handle_text(text: str) -> str:
         actions = PENDING.get("actions")
         if not actions:
             return "Nothing to confirm yet. Run <b>/run</b> first, review the plan, then <b>/confirm</b>."
-        lines = []
-        for a in actions:
-            mer = a.get("merchant") or "_ACQ"
-            nid = NOTI_IDS.get(mer)
-            name = a.get("noti_name", a["segment"]["name"])
-            lines.append(f"• <code>{nid}</code> — {name}" if nid else f"• {name}")
-        return ("✅ <b>Confirmed.</b> Staged as <b>DRAFT</b> (status INACTIVE) in the Zalopay CRM tool — "
-                "content + real per-merchant deeplinks ready for your review:\n\n" + "\n".join(lines) +
-                f"\n\n👉 Review &amp; publish: {CRM_LINK}\n<i>Draft-only by design — the agent proposes, you activate.</i>")
+        import crm_client
+        try:
+            staged = crm_client.stage_drafts(actions)   # full-auto: self-sources its own CRM session
+        except crm_client.CrmSessionError as e:
+            return f"⚠️ {e}"
+        except Exception as e:
+            return f"⚠️ CRM push failed: {type(e).__name__}: {str(e)[:90]}"
+        blocks = ["✅ <b>Confirmed.</b> Staged as <b>DRAFT</b> (INACTIVE) in the Zalopay CRM tool — "
+                  "here is exactly what I embedded in each noti:"]
+        for s in staged:
+            blocks.append(
+                f"\n<b>#{s['id']}</b> · <code>{s['name']}</code>\n"
+                f"   • <b>Title</b> — {s['title']}\n"
+                f"   • <b>Body</b> — {s['body']}\n"
+                f"   • <b>ZPA</b> — <code>{s['zpa']}</code>\n"
+                f"   • <b>ZPI</b> — <code>{s['zpi']}</code>")
+        blocks.append(f"\n👉 Review &amp; publish: {CRM_LINK}\n"
+                      "<i>Draft-only — the agent proposes &amp; embeds the content; you review and activate.</i>")
+        return "\n".join(blocks)
     if cmd == "/report":
         # quick numbers-only report (no action plan / CRM stage)
         import mbs_report

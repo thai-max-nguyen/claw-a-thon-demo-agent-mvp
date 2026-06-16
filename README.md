@@ -56,7 +56,10 @@ sequenceDiagram
   A-->>M: embedded content (title · body · deeplinks)
   M->>C: review & publish ✅
   Note over M,C: The agent proposes — the human always approves.
+  Note over A,CF: 📺 Also live at /dashboard — progress charts + CRM effect, tracked daily
 ```
+
+▶️ **Live monitoring dashboard:** [open `/dashboard`](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) — daily MPU-vs-target + CRM-reactivation-lift charts, agent health, and staged campaigns.
 
 ## 🎥 See it in action
 

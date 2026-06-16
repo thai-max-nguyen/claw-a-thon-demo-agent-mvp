@@ -78,6 +78,28 @@ _DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
    <div class="pill"><span id="dot" class="dot"></span><span id="pill">checking...</span></div>
  </div></div>
  <div class="grid">
+   <div class="card full"><h3>&#128200; Business progress &amp; CRM effect &middot; this is what to watch daily &middot; illustrative</h3>
+     <div style="display:flex;gap:24px;flex-wrap:wrap">
+       <div style="flex:1;min-width:300px">
+         <div class="mut" style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--navy)">MPU vs target &mdash; last 6 months <span style="color:var(--green)">&#9650; on pace</span></div>
+         <svg viewBox="0 0 320 145" width="100%" height="150" preserveAspectRatio="none">
+           <line x1="8" y1="30" x2="312" y2="30" stroke="#0045FF" stroke-dasharray="5 4" stroke-width="1.5"/>
+           <text x="10" y="24" fill="#0045FF" font-size="10" font-weight="700">target</text>
+           <polyline fill="none" stroke="#00B14F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="20,112 78,100 136,88 194,72 252,54 300,42"/>
+           <circle cx="300" cy="42" r="4.5" fill="#00B14F"/>
+           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="20" y="136">M-5</text><text x="78" y="136">M-4</text><text x="136" y="136">M-3</text><text x="194" y="136">M-2</text><text x="252" y="136">M-1</text><text x="300" y="136">now</text></g>
+         </svg>
+       </div>
+       <div style="flex:1;min-width:300px">
+         <div class="mut" style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--navy)">CRM reactivation lift &mdash; last 6 weeks <span style="color:var(--green)">&#9650; rising</span></div>
+         <svg viewBox="0 0 320 145" width="100%" height="150" preserveAspectRatio="none">
+           <g fill="#00D95F"><rect x="22" y="96" width="30" height="28" rx="4"/><rect x="70" y="86" width="30" height="38" rx="4"/><rect x="118" y="78" width="30" height="46" rx="4"/><rect x="166" y="64" width="30" height="60" rx="4"/><rect x="214" y="52" width="30" height="72" rx="4"/><rect x="262" y="40" width="30" height="84" rx="4"/></g>
+           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="37" y="138">W1</text><text x="85" y="138">W2</text><text x="133" y="138">W3</text><text x="181" y="138">W4</text><text x="229" y="138">W5</text><text x="277" y="138">W6</text></g>
+         </svg>
+       </div>
+     </div>
+     <div class="mut" style="font-size:12px;margin-top:8px">Daily glance: is MPU pacing to target, and are the staged CRM campaigns lifting reactivation? <i>(illustrative; the agent fills these from the live run)</i></div>
+   </div>
    <div class="card"><h3>Agent</h3>
      <div class="kv"><span class="mut">Name</span><b id="agent">...</b></div>
      <div class="kv"><span class="mut">Model</span><b id="model">...</b></div>

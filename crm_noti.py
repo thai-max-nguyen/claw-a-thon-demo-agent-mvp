@@ -1,6 +1,6 @@
 """Confirm-gated CRM notification setup for the Growth Assistant.
 
-SOP (per Chị Nga's doc):
+SOP (per the Business Owner's doc):
   1. Build an Action-Recommendation proposal from the daily growth data.
   2. Post a DRY-RUN preview to the Telegram group (segment name, conditions, app-ids,
      channel) — no CRM write yet.
@@ -33,13 +33,13 @@ import time
 import urllib.request
 
 APP_IDS = {"Grab": 222, "Be": 1063, "XANH SM": 3095}
-# Real CTA deeplinks per merchant (ZPA in-app, ZPI web) — from Chị Nga 16/06.
+# Real CTA deeplinks per merchant (ZPA in-app, ZPI web) — from the Business Owner 16/06.
 DEEPLINKS = {
     "Grab":    ("zalopay://launch/app/2222",          "https://grb.to/Homepage"),
     "XANH SM": ("zalopay://launch/app/1653?id=6944",  "http://xanhsm.onelink.me/3eCA/22jus4at"),
     "Be":      ("zalopay://launch/app/1341",          "https://begroup.onelink.me/n83F/zalopayBe"),
 }
-# Chị Nga's content templates by scenario (FPU/RPU/RSPU), each with A/B variants.
+# the Business Owner's content templates by scenario (FPU/RPU/RSPU), each with A/B variants.
 # {merchant} filled per action; {first_name} stays a CRM dynamic param. Brand = Zalopay.
 SCENARIOS = {
     "Acquisition": {  # SCENARIO 1 — FPU (first-time, never rode)
@@ -123,7 +123,7 @@ def _fmtk(n):
 
 
 def build_actions(biz, seg, merch, fc, signals=None):
-    """Multiple prioritized action recommendations per Chị Nga's Step-D framework —
+    """Multiple prioritized action recommendations per the Business Owner's Step-D framework —
     one per lever/merchant, each grounded in real flagged data. Returns a list of
     action dicts (each carries its own CRM segment spec + targeted noti).
 
@@ -210,7 +210,7 @@ def build_actions(biz, seg, merch, fc, signals=None):
 
 
 def build_noti_content(action=None):
-    """Noti copy from Chị Nga's scenario templates (A/B variants + send time +
+    """Noti copy from the Business Owner's scenario templates (A/B variants + send time +
     hypothesis), with {merchant} filled + real per-merchant deeplinks. Brand 'Zalopay'.
     DRAFT — fill these then 'Save' (NOT 'Save & Distribute')."""
     a = action or {"type": "Reactivation"}

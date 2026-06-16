@@ -84,20 +84,20 @@ def test_esc_strips_emoji_and_escapes():
 
 def test_build_confluence_day_native_no_dup():
     import crm_noti as c
-    biz = {"MPU": {"value": 548636, "delta": "▲ +3.4%", "change": 0.034},
-           "NPU": {"value": 3026, "delta": "▼ -0.2%", "change": -0.002},
-           "FPU": {"value": 25898, "delta": "▲ +5.4%", "change": 0.054},
-           "Transactions": {"value": 3046001, "delta": "▲ +11.6%", "change": 0.116},
-           "Refund": {"value": 328719, "delta": "▲ +18.0%", "change": 0.18}}
-    merch = {"Grab": 392315, "XANH SM": 156737, "Be": 84684, "AhaMove": 14480}
-    fc = {"_target": 801000, "MPU_fc": 761524, "prev_full": 736378, "mpu_last_mtd": 530520}
+    biz = {"MPU": {"value": 500000, "delta": "▲ +3.0%", "change": 0.03},
+           "NPU": {"value": 3000, "delta": "▼ -0.3%", "change": -0.003},
+           "FPU": {"value": 30000, "delta": "▲ +5.0%", "change": 0.05},
+           "Transactions": {"value": 3000000, "delta": "▲ +10.0%", "change": 0.10},
+           "Refund": {"value": 300000, "delta": "▲ +15.0%", "change": 0.15}}
+    merch = {"Grab": 300000, "XANH SM": 120000, "Be": 60000, "AhaMove": 20000}
+    fc = {"_target": 735000, "MPU_fc": 700000, "prev_full": 680000, "mpu_last_mtd": 460000}
     actions = c.build_actions(biz, {}, merch, fc)
     s = m.build_confluence_day(biz, {}, merch, fc, actions)
     assert "<table>" in s                                   # real tables, not <pre>
     assert "<pre>" not in s
     assert 'ac:name="status"' in s and 'ac:name="panel"' in s
     assert s.count("Problem") == len(actions)               # no duplication (1 per action panel)
-    assert "548,636" in s and "392,315" in s and "530,520" in s
+    assert "500,000" in s and "300,000" in s and "460,000" in s
     assert "Bottom line" in s
 
 
@@ -112,23 +112,23 @@ def test_chunk_keeps_pre_intact():
 
 
 def test_derive_signals_momentum_leak_forecast():
-    biz = {"MPU": {"value": 548636}, "NPU": {"value": 3026}, "FPU": {"value": 25898},
-           "Transactions": {"value": 3046001}, "Refund": {"value": 328719}}
-    merch = {"Grab": 392315, "XANH SM": 156737, "Be": 84684, "AhaMove": 14480}
-    # real YTM blocks: index0 = PARTIAL current MTD, index1+ = full prior months (recent-first)
-    series = {"Grab": [392315, 529335, 516449, 496331], "XANH SM": [156737, 221129, 186131, 167174],
-              "Be": [84684, 135394, 136706, 138857], "AhaMove": [14480, 25168, 25494, 23522]}
+    biz = {"MPU": {"value": 500000}, "NPU": {"value": 3000}, "FPU": {"value": 30000},
+           "Transactions": {"value": 3000000}, "Refund": {"value": 300000}}
+    merch = {"Grab": 300000, "XANH SM": 120000, "Be": 60000, "AhaMove": 20000}
+    # FAKE YTM blocks: index0 = PARTIAL current MTD, index1+ = full prior months (recent-first)
+    series = {"Grab": [300000, 410000, 400000, 390000], "XANH SM": [120000, 168000, 160000, 155000],
+              "Be": [60000, 86000, 88000, 90000], "AhaMove": [20000, 28000, 27000, 26000]}
     vol = {"Grab": {"Cost/TPV": 0.07}}
-    fc = {"_target": 801000, "MPU_fc": 761524}
+    fc = {"_target": 735000, "MPU_fc": 700000}             # pace 1.4
     s = m.derive_signals(biz, merch, series, vol, fc)
     g = s["merchants"]["Grab"]
-    assert g["momentum"] > 0 and g["trend"] == "accelerating"   # full months 529>516>496, NOT crashing
-    assert g["last_full"] == 529335 and g["proj_mom"] > 0       # projected above last full month
+    assert g["momentum"] > 0 and g["trend"] == "accelerating"   # full months 410>400>390, NOT crashing
+    assert g["last_full"] == 410000 and g["proj_mom"] > 0       # forecast 420k > last full 410k
     assert g["forecast"] > g["mpu"]                             # partial MTD scaled to full month
     assert g["cost_tpv"] == 0.07
     be = s["merchants"]["Be"]
-    assert be["trend"] == "decelerating" and be["proj_mom"] < 0  # 135<136<138 + projected down
-    assert s["funnel"]["leak"] == "acquisition"                 # NPU 11.7% of FPU < 15%
+    assert be["trend"] == "decelerating" and be["proj_mom"] < 0  # 86<88<90 + projected down
+    assert s["funnel"]["leak"] == "acquisition"                 # NPU 10% of FPU < 15%
     assert s["gap"] > 0
     assert s["priority"][0] == "Grab"                           # biggest pool leads
     assert s["priority"].index("Be") < s["priority"].index("XANH SM")  # slipping Be bumped above XANH
@@ -143,7 +143,7 @@ def test_derive_signals_degrades_without_history():
 
 
 def test_kpi_target_present():
-    assert m.MPU_TARGET["2026-06"] == 801000
+    assert m.MPU_TARGET["2026-06"] == 800000
 
 
 def test_tg_html_safe():

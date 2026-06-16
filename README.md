@@ -82,10 +82,11 @@ sequenceDiagram
 
 ## 👀 What lands in your chat every morning
 
-> 🟡 **AT RISK** — MPU **548,636** → forecast **95.1%** of target
-> Gap is **acquisition** (new users flat); lever = re-engage lapsed riders.
+> 🟡 **AT RISK** — MPU pacing to **~95% of target** · gap is **acquisition** (new users flat) → re-engage lapsed riders.
 
 A clean executive brief: **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready** — written for a marketer, not a data engineer.
+
+> 📊 *All figures in this README are **illustrative**. The agent runs on the live Zalopay Mobility dashboards — real business numbers stay internal.*
 
 ## 🧠 The analysis behind it (not a dumb export)
 The agent thinks like a senior growth analyst — every output traces back to live data:
@@ -96,7 +97,7 @@ flowchart TD
   D --> F["📈 <b>Forecast, not guesswork</b><br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
   D --> H["🩺 <b>Health grading</b><br/>MPU · FPU · NPU · RPU vs target<br/>On Track / At Risk / Off Track"]
   D --> A["🚦 <b>4-tier anomaly radar</b><br/>Highlight → Normal → Watch → Alert<br/>cost metrics flip polarity (a rise is bad)"]
-  F --> W["💡 <b>Explains WHY</b><br/>What · Where · Why on every finding<br/><i>e.g. NPU only 11.7% of FPU → acquisition is the constraint</i>"]
+  F --> W["💡 <b>Explains WHY</b><br/>What · Where · Why on every finding<br/><i>e.g. new-payers a small share of first-payments → acquisition is the constraint</i>"]
   H --> W
   A --> W
 ```
@@ -120,13 +121,13 @@ flowchart LR
 ## 🧭 Where the revenue is (the agent prioritizes automatically)
 
 ```mermaid
-pie showData title Mobility MPU by merchant (MTD)
-  "Grab" : 392315
-  "XANH SM" : 156737
-  "Be" : 84684
-  "AhaMove" : 14480
+pie showData title Mobility MPU share by merchant (illustrative)
+  "Grab" : 60
+  "XANH SM" : 24
+  "Be" : 13
+  "AhaMove" : 3
 ```
-→ It focuses reactivation on **Grab & XANH SM** because that's where the paying users are.
+→ It focuses reactivation on the **biggest pools first** (here Grab & XANH SM) — that's where the paying users are. *(shares illustrative; the agent computes them live.)*
 
 ## 🎬 From insight to action — campaigns ready to publish
 Four push-notification drafts with **real deeplinks + A/B copy**, staged in the CRM as **DRAFT** (you approve & publish — the agent never sends on its own):
@@ -149,6 +150,8 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 - **The agent never publishes on its own** — it proposes & drafts; a human reviews and activates.
 
 ## ⚙️ Two ways it works
+
+<img src="docs/two-ways.png" alt="Two ways AI works at Zalopay — Daily 10:00 (auto → Telegram + Confluence) or On demand in Telegram: review → finalize → draft in CRM" width="100%"/>
 
 <div align="center">
 
@@ -176,7 +179,7 @@ Growth Assistant plugs into the tools the team already uses — each via its own
 cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
 ./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
 python3 telegram_bot.py      # start the /run + /confirm bot
-python3 -m pytest tests/     # 47 tests
+python3 -m pytest tests/     # 51 tests
 ```
 > 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
 
@@ -238,12 +241,12 @@ The bot **self-sources its own CRM session** (no manual token) and stages noti a
 | `crm_client.py` | Full-auto CRM staging — self-sources its own session |
 | `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
-| `tests/` | 47 tests · see `DEMO_SCRIPT.md`, `DEPLOY_RUNBOOK.md` |
+| `tests/` | 51 tests · see `DEMO_SCRIPT.md` |
 
 ### Run
 ```bash
 ./run_mbs_growth.sh          # auto-login → pull → audit → post
-python3 -m pytest tests/     # 47 tests passing
+python3 -m pytest tests/     # 51 tests passing
 ```
 </details>
 

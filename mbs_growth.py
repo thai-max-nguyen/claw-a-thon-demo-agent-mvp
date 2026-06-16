@@ -1,4 +1,4 @@
-"""Chị Nga's Growth Assistant — DASHBOARD-ONLY daily flow (no Excel input).
+"""the Business Owner's Growth Assistant — DASHBOARD-ONLY daily flow (no Excel input).
 
 Everything traces to the Atlas (Tableau) dashboards. The only non-dashboard input
 is the monthly MPU KPI target, which is a fixed plan number (set once below), not a
@@ -14,9 +14,9 @@ Sources (all live from Atlas):
 NOT available from the dashboards (left out, never fabricated):
   * per-merchant segment split (NPU/FPU/RSPU/RPU by merchant)
   * per-merchant Trans/TPV at MTD (merchant dashboards run a fixed window)
-  * full-month forecast (Chị Nga's plan model, not reproducible from the dashboard)
+  * full-month forecast (the Business Owner's plan model, not reproducible from the dashboard)
 
-Anomaly tiers (her rules): >=+5% Highlight · 0..+5% Normal · -1..0 Watch · <=-1% Alert.
+Anomaly tiers (the rules): >=+5% Highlight · 0..+5% Normal · -1..0 Watch · <=-1% Alert.
 Cost metrics (Refund) use inverted polarity (a rise is bad).
 """
 import os, sys, re, html, json, time, urllib.request, urllib.parse
@@ -28,13 +28,15 @@ SITE = "ZLPDataServices"
 COMPARISON = "MTD vs previous MTD"
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TG_GROUP = os.getenv("TELEGRAM_GROUP_ID", "").strip()
-NGA_PAGE = "335580236"
+OWNER_PAGE = "335580236"
 
 # Monthly MPU KPI target (from the MBS Growth plan — fixed, not a daily feed).
+# ILLUSTRATIVE monthly MPU targets (round placeholders — NOT the real plan). The real
+# targets are confidential; set them via your own config/env in a real deployment.
 MPU_TARGET = {
-    "2026-01": 735000, "2026-02": 677000, "2026-03": 741000, "2026-04": 761000,
-    "2026-05": 771000, "2026-06": 801000, "2026-07": 837000, "2026-08": 867000,
-    "2026-09": 899000, "2026-10": 940000, "2026-11": 984000, "2026-12": 1022000,
+    "2026-01": 700000, "2026-02": 720000, "2026-03": 740000, "2026-04": 760000,
+    "2026-05": 780000, "2026-06": 800000, "2026-07": 830000, "2026-08": 860000,
+    "2026-09": 900000, "2026-10": 940000, "2026-11": 980000, "2026-12": 1020000,
 }
 YTM_STRIDE = 13  # YTM worksheet: values per merchant (current month first)
 MERCH_ORDER = ["Grab", "XANH SM", "Be", "AhaMove"]  # YTM merchant-major order
@@ -123,7 +125,7 @@ def _delta_pct(delta):
 
 # ------------------------------------------------------------ data pulls
 def pull_mbs_business(cookies):
-    # FPU MBS* tile = "FPU (incl NPU)" per Chị Nga's v27 def (RPU = MPU - FPU incl NPU)
+    # FPU MBS* tile = "FPU (incl NPU)" per the Business Owner's v27 def (RPU = MPU - FPU incl NPU)
     tiles = {"Transactions": "Trans", "TPV": "TPV*", "Gross Revenue": "REV*",
              "Refund": "Refund*", "MPU": "MPU*", "NPU": "NPU*", "FPU": "FPU MBS*"}
     out = {}
@@ -148,11 +150,11 @@ def pull_segments(cookies, mpu, npu):
 
 
 def forecast(biz, cookies):
-    """Full-month forecast — Chị Nga's Excel method (MPU_fc = MTD / pacing),
+    """Full-month forecast — the Business Owner's Excel method (MPU_fc = MTD / pacing),
     fully dashboard-derived from the 'MTD' worksheet (overlays prev-month + current
     cumulative MPU by day):
        pacing  = prev_month_cum[day=days_elapsed] / prev_month_cum[full]
-       MPU_fc  = MPU_MTD / pacing                       (stable; her AD6 = AC6/AF6)
+       MPU_fc  = MPU_MTD / pacing                       (stable; the AD6 = AC6/AF6)
        NPU_fc  = NPU_MTD / days_elapsed * total_days
        FPU_fc  = FPU_MTD / days_elapsed * total_days
     days_elapsed is taken from the current cumulative run's length (no date guessing)."""
@@ -441,7 +443,7 @@ def _table(rows):
 
 
 def build_report(biz, seg, merch, fc=None, actions=None):
-    """Chị Nga's STANDARD MONTHLY OUTPUT — 5 sections, MPU-focused, concise."""
+    """the Business Owner's STANDARD MONTHLY OUTPUT — 5 sections, MPU-focused, concise."""
     DIV = "━━━━━━━━━━━━━━━━━━━━"
     mpu = biz["MPU"]["value"]; npu = biz["NPU"]["value"]; fpu = biz["FPU"]["value"]
     rpu = mpu - fpu
@@ -691,9 +693,9 @@ def paste_confluence(report, mpu=None, fc_reach=None, actions=None, page_id=None
                      day_storage=None):
     """Daily-log layout: header + latest panel + TOC + one collapsible <expand>
     per day (newest first, re-runs replace same day), each holding the analysis +
-    noti suggestions. If the page has Chị Nga's spec, it's preserved at the bottom."""
+    noti suggestions. If the page has the Business Owner's spec, it's preserved at the bottom."""
     import base64, uuid
-    page_id = page_id or NGA_PAGE
+    page_id = page_id or OWNER_PAGE
     auth = open(os.path.expanduser("~/.config/confluence-token")).read().strip()
     h = {"Authorization": "Basic " + base64.b64encode(auth.encode()).decode(), "Content-Type": "application/json"}
     base = f"https://confluence.zalopay.vn/rest/api/content/{page_id}"
@@ -701,7 +703,7 @@ def paste_confluence(report, mpu=None, fc_reach=None, actions=None, page_id=None
     body = d["body"]["storage"]["value"]; ver = d["version"]["number"]
     date = time.strftime("%d/%m/%Y")
     color, word = _status(fc_reach)
-    # ----- preserve Chị Nga's spec if this page has it; else build a clean daily page -----
+    # ----- preserve the Business Owner's spec if this page has it; else build a clean daily page -----
     sm = re.search(r"<h[1-6][^>]*>(?:<span[^>]*>)?\s*AI Agent: Growth Assistant", body)
     spec = body[sm.start():] if sm else ""
     region = body[:sm.start()] if sm else body
@@ -778,7 +780,7 @@ def main():
         return
     day_storage = build_confluence_day(biz, seg, merch, fc, actions)  # native Confluence (tables+panels)
     if "--confluence" in sys.argv or "--all" in sys.argv:
-        print("\n[confluence·Nga] v->", paste_confluence(report, mpu, fc_reach, actions, day_storage=day_storage))
+        print("\n[confluence·owner] v->", paste_confluence(report, mpu, fc_reach, actions, day_storage=day_storage))
         try:
             v = paste_confluence(report, mpu, fc_reach, actions, page_id="335581153",
                                  new_title="MBS Growth Assistant — Daily Output", day_storage=day_storage)

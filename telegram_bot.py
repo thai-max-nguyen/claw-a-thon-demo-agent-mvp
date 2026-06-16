@@ -1,26 +1,22 @@
-"""Telegram bridge for the Interview Q&A Agent.
+"""Telegram bridge for the Growth Assistant.
 
-Long-polls Telegram getUpdates, routes slash commands to the agent's HTTP API,
-and replies via sendMessage. Works in groups with privacy mode ON (it only
-needs to see /commands, which Telegram always delivers).
+Long-polls Telegram getUpdates, routes slash commands, replies via sendMessage.
+Works in groups with privacy mode ON (it only sees /commands).
 
 Commands:
-  /start, /help          -> usage
-  /question [category]   -> generate an interview question (default behavioral)
-  /ask <your question>   -> coaching model-answer (uses /chat)
-  /evaluate <q> ||| <a>  -> score an answer (question and answer split by |||)
+  /run      -> full daily analysis (pull → forecast → anomalies → action plan + CRM drafts)
+  /confirm  -> stage the proposed noti as DRAFT in the CRM tool (you review, then publish)
+  /report   -> quick numbers-only report
+  /help     -> usage
 
-Env (from .env): TELEGRAM_BOT_TOKEN, AGENT_URL (default http://127.0.0.1:8080).
-The token is read from the environment ONLY — never hardcode it here.
+Env (from .env): TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID. Token read from env ONLY.
 """
 import os
 import time
 import requests
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-AGENT_URL = os.getenv("AGENT_URL", "http://127.0.0.1:8080").rstrip("/")
 API = f"https://api.telegram.org/bot{TOKEN}"
-CATS = ["behavioral", "technical", "system-design", "hr"]
 
 HELP = (
     "🤖 <b>MBS Growth Assistant</b>\n"
@@ -68,16 +64,10 @@ def run_e2e() -> dict:
     return {"report": report, "actions": actions, "ok": ok}
 
 
-def agent_post(path: str, payload: dict) -> dict:
-    r = requests.post(f"{AGENT_URL}{path}", json=payload, timeout=60)
-    r.raise_for_status()
-    return r.json()
-
-
 def handle_text(text: str) -> str:
     """Pure router: command text -> reply text. Unit-testable, no network to TG."""
     text = (text or "").strip()
-    # strip @botname suffix that groups append: /ask@mbs_analysis_bot
+    # strip @botname suffix that groups append: /run@mbs_analysis_bot
     if text.startswith("/"):
         head, _, rest = text.partition(" ")
         cmd = head.split("@", 1)[0].lower()
@@ -86,21 +76,6 @@ def handle_text(text: str) -> str:
         return ""  # privacy mode: ignore non-command chatter
     if cmd in ("/start", "/help"):
         return HELP
-    if cmd == "/question":
-        cat = arg.lower() if arg.lower() in CATS else "behavioral"
-        d = agent_post("/question", {"category": cat, "role": "Product Manager"})
-        return f"❓ *{cat}* question:\n\n{d.get('question', '(none)')}"
-    if cmd == "/ask":
-        if not arg:
-            return "Usage: /ask <your interview question>"
-        d = agent_post("/chat", {"message": arg})
-        return d.get("answer", "(no answer)")
-    if cmd == "/evaluate":
-        if "|||" not in arg:
-            return "Usage: /evaluate <question> ||| <your answer>"
-        q, a = [s.strip() for s in arg.split("|||", 1)]
-        d = agent_post("/evaluate", {"question": q, "answer": a})
-        return f"📊 Score: *{d.get('score')}/100*\n\n{d.get('feedback', '')}"
     if cmd in ("/run", "/growth"):
         res = run_e2e()
         if res.get("error"):

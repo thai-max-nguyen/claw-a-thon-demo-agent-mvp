@@ -1,4 +1,4 @@
-"""MBS daily-report pipeline (Chị Nga / Biz ZLP workflow).
+"""MBS daily-report pipeline (the Business Owner / Biz ZLP workflow).
 
 Flow:
   1. Load daily metrics (CSV — swap for the real MBS data source / SQL).

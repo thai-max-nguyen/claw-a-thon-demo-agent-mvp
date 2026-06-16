@@ -5,13 +5,18 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import crm_noti as c  # noqa: E402
 
-BIZ = {"MPU": {"value": 548636, "delta": "▲ +3.4%", "change": 0.034},
-       "NPU": {"value": 3026, "delta": "▼ -0.2%", "change": -0.002},
-       "FPU": {"value": 25898, "delta": "▲ +5.4%", "change": 0.054},
-       "Transactions": {"value": 3046001, "delta": "▲ +11.6%", "change": 0.116},
-       "Refund": {"value": 328719, "delta": "▲ +18.0%", "change": 0.18}}
-MERCH = {"Grab": 392315, "XANH SM": 156737, "Be": 84684, "AhaMove": 14480}
-FC = {"_target": 801000, "MPU_fc": 761524, "prev_full": 736378, "mpu_last_mtd": 530520}
+# Fixtures are FAKE round numbers (no real business data) — shaped to exercise the logic:
+# NPU/FPU = 10% (< 15% → acquisition leak), MPU_fc < target (gap > 0), Grab-dominant merchants.
+BIZ = {"MPU": {"value": 500000, "delta": "▲ +3.0%", "change": 0.03},
+       "NPU": {"value": 3000, "delta": "▼ -0.3%", "change": -0.003},
+       "FPU": {"value": 30000, "delta": "▲ +5.0%", "change": 0.05},
+       "Transactions": {"value": 3000000, "delta": "▲ +10.0%", "change": 0.10},
+       "Refund": {"value": 300000, "delta": "▲ +15.0%", "change": 0.15}}
+MERCH = {"Grab": 300000, "XANH SM": 120000, "Be": 60000, "AhaMove": 20000}
+FC = {"_target": 735000, "MPU_fc": 700000, "prev_full": 680000, "mpu_last_mtd": 460000}  # gap 35K, pace 1.4
+# YTM blocks: index0 = PARTIAL current MTD, then full prior months (pace ≈ 1.4 → full ≈ 1.4×partial)
+SERIES = {"Grab": [300000, 420000, 410000, 400000], "XANH SM": [120000, 168000, 160000, 155000],
+          "Be": [60000, 82000, 84000, 86000], "AhaMove": [20000, 28000, 27000, 26000]}
 
 
 def test_actions_count_and_merchants():
@@ -108,9 +113,7 @@ def test_noti_label_rule():
 
 def test_build_actions_uses_signals():
     import mbs_growth as m
-    series = {"Grab": [392315, 529335, 516449, 496331], "XANH SM": [156737, 221129, 186131],
-              "Be": [84684, 135394, 136706, 138857], "AhaMove": [14480, 25168]}
-    sig = m.derive_signals(BIZ, MERCH, series, {}, FC)
+    sig = m.derive_signals(BIZ, MERCH, SERIES, {}, FC)
     acts = c.build_actions(BIZ, {}, MERCH, FC, sig)
     grab = next(a for a in acts if a.get("merchant") == "Grab")
     assert "projected" in grab["problem"] and "last full month" in grab["problem"]   # projection surfaced
@@ -124,6 +127,39 @@ def test_build_actions_uses_signals():
 def test_build_actions_no_signals_still_works():
     acts = c.build_actions(BIZ, {}, MERCH, FC)            # signals omitted -> backward compatible
     assert len(acts) == 4 and acts[0]["type"] == "Acquisition"
+
+
+# ---- content & segment MATCH the purpose (semantic correctness, not just shape) ----
+def test_acquisition_segment_targets_nonpayers():
+    acq = next(a for a in c.build_actions(BIZ, {}, MERCH, FC) if a["type"] == "Acquisition")
+    cond = acq["segment"]["conditions"].lower()
+    assert "opened mobility" in cond and "exclusion" in cond and "payment" in cond   # target = non-payers
+    assert acq["noti"]["campaign"].startswith("FPU")                                 # first-payment scenario
+    blob = (acq["noti"]["variant_a"]["title"] + acq["noti"]["variant_a"]["body"] +
+            acq["noti"]["variant_b"]["title"] + acq["noti"]["variant_b"]["body"]).lower()
+    assert "đầu tiên" in blob or "lần đầu" in blob                                    # copy = first-ride themed
+
+
+def test_reactivation_segment_deeplink_copy_match_merchant():
+    deep = {"Grab": "app/2222", "XANH SM": "app/1653", "Be": "app/1341"}
+    for a in c.build_actions(BIZ, {}, MERCH, FC):
+        mer = a.get("merchant")
+        if not mer:
+            continue
+        cond = a["segment"]["conditions"]
+        assert f"txn at {mer} in" in cond and "Exclusion" in cond          # lapsed = paid prev, not this month
+        assert deep[mer] in a["noti"]["zpa_redirection"]                   # deeplink matches the merchant
+        body = a["noti"]["variant_a"]["body"] + a["noti"]["variant_b"]["body"]
+        assert mer in body                                                 # copy names the merchant
+        assert a["segment"]["name"].startswith(f"Noti_RPU_{mer.replace(' ', '')}_Churn")
+
+
+def test_offer_tiers_to_gap():
+    import mbs_growth as m
+    sig = m.derive_signals(BIZ, MERCH, SERIES, {}, FC)
+    by = {a.get("merchant"): a for a in c.build_actions(BIZ, {}, MERCH, FC, sig)}
+    tier = lambda p: 50 if "50K" in p else 30
+    assert tier(by["Grab"]["promo"]) > tier(by["Be"]["promo"])             # bigger gap → stronger offer
 
 
 def test_fmtk():

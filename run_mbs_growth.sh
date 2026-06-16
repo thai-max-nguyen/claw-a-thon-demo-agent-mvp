@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Daily MBS Growth report -> Telegram group + Chị Nga's Confluence page.
+# Daily MBS Growth report -> Telegram group + the Business Owner's Confluence page.
 # Dashboard-only (no Excel). Needs a live Atlas SSO session in Chrome at run time;
 # if the session is dead or the audit fails, mbs_growth.py aborts without sending.
 cd /Users/lap15964/clawathon-demo/claw-a-thon-demo-agent || exit 1

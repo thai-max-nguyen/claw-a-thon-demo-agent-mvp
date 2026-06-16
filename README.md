@@ -131,16 +131,13 @@ Whichever way it runs, the agent publishes to a **live dashboard** — agent hea
 ## 🧠 The analysis behind it (not a dumb export)
 The agent thinks like a senior growth analyst — every output traces back to live data:
 
-```mermaid
-flowchart TD
-  D["📊 Live dashboard data"]
-  D --> F["Forecast not guesswork<br/>pace vs prior-month curve<br/>commits only when confident"]
-  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track · At Risk · Off Track"]
-  D --> A["4-tier anomaly radar<br/>Highlight · Normal · Watch · Alert<br/>cost metrics flip polarity"]
-  F --> W["Explains the WHY<br/>What · Where · Why per finding<br/>names the binding constraint"]
-  H --> W
-  A --> W
-```
+| Lens | What it does | Output |
+|------|--------------|--------|
+| 📈 **Forecast, not guesswork** | this month's pace vs the prior-month curve | commits a number only when confident |
+| 🩺 **Health grading** | MPU · FPU · NPU · RPU vs target | On Track · At Risk · Off Track |
+| 🚦 **4-tier anomaly radar** | Highlight · Normal · Watch · Alert | cost metrics flip polarity (a rise is bad) |
+
+→ Every finding explains **What · Where · Why** and names the **binding constraint** — not just a number, the reason behind it.
 
 **It also *combines* the dashboards into signals none of them show on their own** (real, computed from the pulls — no fabrication):
 - **Per-merchant momentum + forecast** — the `YTM` monthly history → each merchant's MoM trend (accelerating / decelerating) and its own month-end projection, not just today's size.

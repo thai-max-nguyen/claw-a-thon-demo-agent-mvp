@@ -97,9 +97,9 @@ def test_evaluate_grading_spread():
 
 
 def test_telegram_router_help():
-    assert "/question" in tg.handle_text("/help")
-    assert tg.handle_text("/ask@mbs_analysis_bot") == "Usage: /ask <your interview question>"
-    assert tg.handle_text("just chatter") == ""  # privacy: ignore non-commands
+    h = tg.handle_text("/help")
+    assert "/run" in h and "/confirm" in h          # MBS Growth Assistant commands
+    assert tg.handle_text("just chatter") == ""      # privacy: ignore non-commands
 
 
 @pytest.mark.skipif(not LIVE, reason="router live calls need the model")

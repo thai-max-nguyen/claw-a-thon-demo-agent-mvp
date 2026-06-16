@@ -36,6 +36,6 @@ def test_telegram_report_and_action_routing():
     # /report routes to the MBS pipeline (stub narrative is fine offline)
     rep = tg.handle_text("/report")
     assert "MBS Daily Report" in rep
-    # /action acknowledges + queues
-    assert "Action received" in tg.handle_text("/action push alert if withdrawal drops >5%")
-    assert tg.handle_text("/action").startswith("Usage:")
+    # /confirm is gated: requires a prior /run
+    tg.PENDING.clear()
+    assert "Nothing to confirm" in tg.handle_text("/confirm")

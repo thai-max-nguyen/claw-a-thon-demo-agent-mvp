@@ -23,7 +23,7 @@ The Mobility Growth Marketer spends 2–3 hours every week manually tracking per
 Weekly analysis time cut from **2–3 hours to under 20 minutes** — the team focuses on decisions, not data wrangling.
 
 ## How it runs
-- **Interactive (Telegram):** chat **`/run`** → the agent runs the full pipeline on demand (pull → forecast → anomalies → action plan) and posts the report; you review, then **`/confirm`** stages the proposed campaigns as **DRAFT** notifications in the CRM tool — you publish. Agent never publishes live.
+- **Interactive (Telegram):** chat **`/run`** → the agent runs the full pipeline on demand (pull → forecast → anomalies → action plan) and posts an executive report; you review, then **`/confirm`** stages the proposed campaigns as **DRAFT** notifications in the CRM tool and replies with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). The bot **self-sources its own CRM session** (no manual token) and writes draft-only — you publish; the agent never publishes live.
 - Scheduled daily **10:00** (`launchd`) with **Atlas auto-login** (self-heals the SSO session).
 - An **audit gate** validates every number (segment sums, forecast bounds, cross-checks) and **aborts before sending** if anything fails — nothing fabricated.
 - **CRM is draft-only** — the agent proposes; a human reviews + publishes (confirm-gated).

@@ -31,7 +31,7 @@
 Kept in sync: Confluence **Daily Output** (335581153, v5) + **PRD** (335581080, v4) carry a matching CRM-realization panel.
 
 ## Demo flow (Telegram, live)
-`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts the 5-section report + 4 noti drafts → human reviews → `/confirm` → stages the 4 as DRAFT in the CRM tool (human publishes). Bot: `telegram_bot.py` (HTML + chunked). Tests: 46 pass.
+`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts an executive report + 4 noti drafts → human reviews → `/confirm` → bot **self-sources its own CRM session** (no manual token) and stages the 4 as DRAFT, replying with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). Human publishes. Bot: `telegram_bot.py` + `crm_client.py` (HTML, chunked). Tests: 47 pass.
 
 ## Thumbnail
 16:9 — `Thumbnail AI Agent - Summer lubu.png`

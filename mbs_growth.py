@@ -259,20 +259,29 @@ def derive_signals(biz, merch, series=None, vol=None, fc=None):
 
     merchants = {}
     for name, cur in merch.items():
+        # YTM block = [current-month MTD (PARTIAL), last full month, month before, …].
+        # Index 0 is partial → NEVER compare it to a full month. Momentum/trend use the
+        # FULL prior months only; the actionable signal is the full-month FORECAST vs last full month.
         s = series.get(name) or []
-        momentum = ((s[0] - s[1]) / s[1]) if len(s) >= 2 and s[1] else None      # MoM %
+        full = [int(v) for v in s[1:] if isinstance(v, (int, float)) and v > 0]   # prior full months, recent-first
+        last_full = full[0] if full else None
+        fcast = round(cur * pace) if pace else None                               # this month projected to full
+        momentum = ((full[0] - full[1]) / full[1]) if len(full) >= 2 and full[1] else None   # completed MoM
+        proj_mom = ((fcast - last_full) / last_full) if (fcast and last_full) else None       # projected vs last full
         trend = None
-        if len(s) >= 3 and s[1] and s[2]:
-            prev_avg = (s[1] + s[2]) / 2
-            trend = "accelerating" if s[0] > s[1] > s[2] else "decelerating" if s[0] < prev_avg else "steady"
+        if len(full) >= 3 and full[1] and full[2]:
+            trend = ("accelerating" if full[0] > full[1] > full[2]
+                     else "decelerating" if full[0] < (full[1] + full[2]) / 2 else "steady")
         v = vol.get(name) or {}
         merchants[name] = {
-            "mpu": cur, "share": cur / msum,
-            "momentum": momentum, "trend": trend,
-            "forecast": round(cur * pace) if pace else None,
-            "cost_tpv": v.get("Cost/TPV"),
+            "mpu": cur, "share": cur / msum, "last_full": last_full,
+            "momentum": momentum, "proj_mom": proj_mom, "trend": trend,
+            "forecast": fcast, "cost_tpv": v.get("Cost/TPV"),
             "gap_alloc": round(gap * cur / msum) if gap else 0,
         }
+
+    def _slipping(x):  # this month projected below last full month, or a falling full-month trend
+        return x["trend"] == "decelerating" or (x["proj_mom"] is not None and x["proj_mom"] < -0.02)
 
     # funnel-leak: where is growth actually constrained?
     npu_pct_fpu = npu / fpu if fpu else None
@@ -287,10 +296,11 @@ def derive_signals(biz, merch, series=None, vol=None, fc=None):
         "merchants": merchants,
         "funnel": {"npu_pct_fpu": npu_pct_fpu, "rpu_pct_mpu": rpu_pct_mpu, "leak": leak},
         "gap": gap, "refund_rate": refund_rate,
-        # priority order: biggest pools first, but a decelerating merchant is bumped up
+        # priority: biggest pools first, but a slipping merchant (projected below last
+        # full month, or a falling full-month trend) is bumped up — that's where MPU is at risk
         "priority": [n for n, _ in sorted(
             merchants.items(),
-            key=lambda kv: (kv[1]["share"] + (0.15 if kv[1]["trend"] == "decelerating" else 0)),
+            key=lambda kv: (kv[1]["share"] + (0.15 if _slipping(kv[1]) else 0)),
             reverse=True)],
     }
 

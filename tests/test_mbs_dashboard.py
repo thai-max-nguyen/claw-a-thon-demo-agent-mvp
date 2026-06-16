@@ -115,18 +115,23 @@ def test_derive_signals_momentum_leak_forecast():
     biz = {"MPU": {"value": 548636}, "NPU": {"value": 3026}, "FPU": {"value": 25898},
            "Transactions": {"value": 3046001}, "Refund": {"value": 328719}}
     merch = {"Grab": 392315, "XANH SM": 156737, "Be": 84684, "AhaMove": 14480}
-    series = {"Grab": [392315, 410000, 420000], "XANH SM": [156737, 150000, 148000],
-              "Be": [84684, 84000, 83000], "AhaMove": [14480, 14000]}
+    # real YTM blocks: index0 = PARTIAL current MTD, index1+ = full prior months (recent-first)
+    series = {"Grab": [392315, 529335, 516449, 496331], "XANH SM": [156737, 221129, 186131, 167174],
+              "Be": [84684, 135394, 136706, 138857], "AhaMove": [14480, 25168, 25494, 23522]}
     vol = {"Grab": {"Cost/TPV": 0.07}}
     fc = {"_target": 801000, "MPU_fc": 761524}
     s = m.derive_signals(biz, merch, series, vol, fc)
     g = s["merchants"]["Grab"]
-    assert g["momentum"] < 0 and g["trend"] == "decelerating"   # 392k after 410k,420k
-    assert g["forecast"] > g["mpu"]                              # pace > 1 applied per merchant
+    assert g["momentum"] > 0 and g["trend"] == "accelerating"   # full months 529>516>496, NOT crashing
+    assert g["last_full"] == 529335 and g["proj_mom"] > 0       # projected above last full month
+    assert g["forecast"] > g["mpu"]                             # partial MTD scaled to full month
     assert g["cost_tpv"] == 0.07
+    be = s["merchants"]["Be"]
+    assert be["trend"] == "decelerating" and be["proj_mom"] < 0  # 135<136<138 + projected down
     assert s["funnel"]["leak"] == "acquisition"                 # NPU 11.7% of FPU < 15%
-    assert s["gap"] > 0 and sum(x["gap_alloc"] for x in s["merchants"].values()) > 0
-    assert s["priority"][0] in ("Grab", "XANH SM")              # biggest pools lead
+    assert s["gap"] > 0
+    assert s["priority"][0] == "Grab"                           # biggest pool leads
+    assert s["priority"].index("Be") < s["priority"].index("XANH SM")  # slipping Be bumped above XANH
 
 
 def test_derive_signals_degrades_without_history():

@@ -108,12 +108,12 @@ def test_noti_label_rule():
 
 def test_build_actions_uses_signals():
     import mbs_growth as m
-    series = {"Grab": [392315, 420000, 430000], "XANH SM": [156737, 150000],
-              "Be": [84684, 83000], "AhaMove": [14480]}
+    series = {"Grab": [392315, 529335, 516449, 496331], "XANH SM": [156737, 221129, 186131],
+              "Be": [84684, 135394, 136706, 138857], "AhaMove": [14480, 25168]}
     sig = m.derive_signals(BIZ, MERCH, series, {}, FC)
     acts = c.build_actions(BIZ, {}, MERCH, FC, sig)
     grab = next(a for a in acts if a.get("merchant") == "Grab")
-    assert "MoM" in grab["problem"]                       # momentum surfaced in the diagnosis
+    assert "projected" in grab["problem"] and "last full month" in grab["problem"]   # projection surfaced
     assert "đến 50K" in grab["promo"] or "đến 30K" in grab["promo"]   # offer tiered by gap
     # still produces the full set + no placeholder leak
     assert len(acts) == 4

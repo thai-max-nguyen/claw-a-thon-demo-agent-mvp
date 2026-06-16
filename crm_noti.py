@@ -179,10 +179,10 @@ def build_actions(biz, seg, merch, fc, signals=None):
         est = round(lapsed_total * cur / merch_sum) if lapsed_total else None
         appid = APP_IDS.get(label, "")
         m = sig_m.get(label, {})
-        mom, trend, fcast, alloc = m.get("momentum"), m.get("trend"), m.get("forecast"), m.get("gap_alloc")
-        mom_txt = f" · MoM {mom*100:+.1f}% ({trend})" if mom is not None else ""
+        proj, trend, fcast, alloc = m.get("proj_mom"), m.get("trend"), m.get("forecast"), m.get("gap_alloc")
+        mom_txt = f" · projected {proj*100:+.1f}% vs last full month" if proj is not None else ""
         alloc_txt = (f" Needs ≈{_fmtk(alloc)} MPU to close its share of the gap." if alloc else "")
-        decel = " It is also <b>decelerating</b> month-over-month, so the slip is structural, not noise." if trend == "decelerating" else ""
+        decel = " It is <b>decelerating</b> on the full-month trend, so the slip is structural, not noise." if trend == "decelerating" else ""
         actions.append({
             "priority": "P2", "type": "Reactivation", "merchant": label,
             "problem": f"{label}: lapsed payers — paid in {prev_m} but no transaction in {cur_m} (≈{_fmtk(est) if est else '?'} users){mom_txt}.",

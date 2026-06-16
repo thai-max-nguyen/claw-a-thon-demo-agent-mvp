@@ -1,4 +1,4 @@
-"""Interview Q&A Custom Agent — FastAPI app for GreenNode AgentBase.
+"""Growth Assistant — Zalopay Mobility · Custom Agent (FastAPI) for GreenNode AgentBase.
 
 Full version. Endpoints:
   GET  /health                 -> liveness probe (200)
@@ -39,9 +39,9 @@ MODEL_EVALUATE = os.getenv("MODEL_EVALUATE", "").strip() or LLM_MODEL
 CATEGORIES = ["behavioral", "technical", "system-design", "hr"]
 
 app = FastAPI(
-    title="Interview Q&A Agent",
+    title="Growth Assistant — Zalopay Mobility",
     version="1.0.0",
-    description="Interview question generation, coaching, and answer scoring on GreenNode AgentBase.",
+    description="Growth Assistant for Zalopay Mobility — daily growth analytics + CRM action Q&A on GreenNode AgentBase.",
 )
 
 # In-memory session store: {session_id: [{"role","content","ts"}]}
@@ -115,7 +115,7 @@ def health():
 @app.get("/")
 def root():
     return {
-        "agent": "Interview Q&A Agent",
+        "agent": "Growth Assistant — Zalopay Mobility",
         "version": "1.0.0",
         "live_model": LLM_MODEL if LIVE else None,
         "mode": "live" if LIVE else "stub",

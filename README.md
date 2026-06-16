@@ -70,6 +70,8 @@ sequenceDiagram
 
 ## 🌓 A morning, before & after
 
+<img src="docs/before-after.png" alt="Before: manual, messy, exhausting — After: automated, smart, superpowers" width="100%"/>
+
 | Step | 😩 Before | 😎 With Growth Assistant |
 |------|-----------|--------------------------|
 | Pull the data | manual, 4 browser tabs, ~1h | automatic, in seconds |
@@ -85,17 +87,29 @@ sequenceDiagram
 A clean executive brief: **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready** — written for a marketer, not a data engineer.
 
 ## 🧠 The analysis behind it (not a dumb export)
-The agent thinks like a senior growth analyst:
+The agent thinks like a senior growth analyst — every output traces back to live data:
 
-- **Forecast, not guesswork** — it compares this month's *daily pace* against last month's full curve to project end-of-month MPU, and only commits a number when confidence is high.
-- **Health grading** — every segment (MPU · FPU · NPU · RPU) is scored against the monthly target → **On Track / At Risk / Off Track**.
-- **4-tier anomaly radar** — changes are auto-classified *Highlight → Normal → Watch → Alert*; cost metrics like refund flip polarity (a rise is bad), so nothing slips through.
-- **It explains *why*** — each anomaly comes with What / Where / Why, e.g. *"NPU is only 11.7% of FPU → first-payments are mostly existing users, so net-new acquisition is the real constraint."*
+```mermaid
+flowchart TD
+  D[("📊 Live dashboard data")]
+  D --> F["📈 <b>Forecast, not guesswork</b><br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
+  D --> H["🩺 <b>Health grading</b><br/>MPU · FPU · NPU · RPU vs target<br/>On Track / At Risk / Off Track"]
+  D --> A["🚦 <b>4-tier anomaly radar</b><br/>Highlight → Normal → Watch → Alert<br/>cost metrics flip polarity (a rise is bad)"]
+  F --> W["💡 <b>Explains WHY</b><br/>What · Where · Why on every finding<br/><i>e.g. NPU only 11.7% of FPU → acquisition is the constraint</i>"]
+  H --> W
+  A --> W
+```
 
 ### 🎯 How it picks the segment to target
-1. **Rank by impact** — merchants sorted by MPU share; the biggest pools (Grab, XANH SM) get the first reactivation push.
-2. **Define the audience precisely** — *lapsed payer* = paid at this merchant **last month**, silent **this month**; *acquisition* = high-intent users with no Mobility payment yet.
-3. **Translate to a CRM segment** — app-id include/exclude, time window, estimated size, 1 promo/user — ready to drop into the tool.
+A 3-step funnel from "where's the money" to a ready CRM audience:
+
+```mermaid
+flowchart LR
+  R["1️⃣ <b>Rank by impact</b><br/>merchants by MPU share<br/>Grab · XANH SM first"]
+  D["2️⃣ <b>Define the audience</b><br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
+  C["3️⃣ <b>Translate to a CRM segment</b><br/>app-id include/exclude · time window<br/>est. size · 1 promo/user"]
+  R --> D --> C
+```
 
 ## 🧭 Where the revenue is (the agent prioritizes automatically)
 

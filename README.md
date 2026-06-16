@@ -48,13 +48,13 @@ sequenceDiagram
 
 ## 🎥 See it in action
 
-**1️⃣ `/run` — one message, full analysis lands in Telegram**
+**Step 1 — `/run`: one message, and the full analysis lands in Telegram**
 <img src="docs/step1-run.png" alt="/run — Growth Assistant posts the daily MTD brief in Telegram" width="100%"/>
 
-**2️⃣ `/confirm` — campaigns staged as DRAFT, with the exact content embedded**
+**Step 2 — `/confirm`: review the plan, then stage the campaigns as DRAFT (with the exact content embedded)**
 <img src="docs/step2-confirm.png" alt="/confirm — 4 push-noti drafts with title, body and deeplinks" width="100%"/>
 
-**3️⃣ Live in the Zalopay CRM — ready for a human to review & publish**
+**Step 3 — Live in the Zalopay CRM: the campaigns are staged, ready for a human to review & publish**
 <img src="docs/step3-crm.png" alt="The 4 notifications staged as DRAFT in the Zalopay CRM tool" width="100%"/>
 
 ## 📈 The impact
@@ -155,7 +155,7 @@ Today the agent is dashboard-bound — it only claims what the dashboards can pr
 |-------|---------|---------|
 | **Now** | Dashboard-only analysis + draft CRM campaigns | MTD forecast, anomaly radar, per-merchant reactivation |
 | **Next — when ZDS dashboards support segment filters** | Split NPU / RPU / RSPU **by merchant**, per-merchant forecast | sharper targeting + budget allocation per merchant |
-| **Then** | **Toro-style auto-rollout** for large high-risk UID sets | safe staged rollout to big audiences |
+| **Then** | **Gradual, staged auto-rollout** for large high-risk user sets | safely roll out to big audiences |
 | **Then** | One-tap **live publish** (agent → CRM) once write-scope is granted | close the loop end-to-end |
 | **Later** | More channels (Zalo OA, in-app) + more verticals beyond Mobility | one analyst brain across the business |
 

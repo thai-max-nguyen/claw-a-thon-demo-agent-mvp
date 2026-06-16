@@ -10,3 +10,9 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# runtime state / business data (do not commit)
+.tg_chat_id
+.tg_group_id
+crm_noti_audit.jsonl
+*.xlsx

@@ -1,56 +1,50 @@
-# Interview Q&A Agent — GreenNode AgentBase (Claw-a-thon Nhóm 2)
+# Growth Assistant — Zalopay Mobility Services
 
-A Custom Agent for **GreenNode AgentBase**: generates interview questions, gives
-STAR-method coaching answers, and scores candidate answers — backed by an
-OpenAI-compatible LLM (GreenNode MaaS).
+**Team:** Summer Lubu · **Track:** Data Analysis · GreenNode Claw-a-thon 2026
 
-## Endpoints
+An AI agent that does a Growth Marketer's daily dashboard analysis for **Zalopay Mobility (MBS)** — automatically.
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/health` | Liveness probe → `{"status":"ok"}` (200) |
-| GET | `/` | Agent metadata + capabilities |
-| POST | `/question` | Generate an interview question (`category`, `role`) |
-| POST | `/chat` | Coaching model-answer to an interview question |
-| POST | `/evaluate` | Score a candidate answer 0–100 + feedback |
-| GET | `/session/{sid}` | Retrieve a session's Q&A history |
-| DELETE | `/session/{sid}` | Clear a session |
+## Problem
+The Mobility Growth Marketer spends 2–3 hours every week manually tracking performance across **four disconnected Atlas dashboards** (MBS, Grab, Be, XANH SM), computing derived metrics, forecasting end-of-month numbers, and finding under-performing segments — before even getting to CRM push notifications.
 
-Categories: `behavioral`, `technical`, `system-design`, `hr`.
+## What it does (dashboard-only, no Excel)
+1. **Pulls MTD** live from the Atlas (Tableau) dashboards — MBS KPI tiles + `Monthly` / `YTM` / `MTD` worksheets.
+2. **Computes** derived metrics (FPU excl. NPU, RPU, retain rate) and a **full-month forecast** per segment (pacing = prev-month cumulative; confidence-gated).
+3. **Compares** current MTD vs last month (same elapsed days) and **flags anomalies** with a 4-tier rule set; segments behind KPI are marked **At Risk**.
+4. **Recommends actions** — per at-risk segment a 3W insight (What/Where/Why) + a prioritized campaign (P1 Acquisition + per-merchant P2 Reactivation).
+5. **Generates CRM assets** — a ready-to-use segment (`Noti_[Type]_[Merchant]_DD/MM`, app-id include/exclude, estimated size) + A/B push-notification copy (real per-merchant deeplinks, send times, hypotheses) to paste into the Zalopay CRM tool.
 
-## Run locally
+## Output & delivery
+- **Telegram group** — concise 5-section daily report.
+- **Confluence** — clean daily log (collapsible per-day, tables, panels, TOC) + the team PRD.
+- Sections: MTD Snapshot · Segment Health · Top Anomalies (3W) · Action Plan · CRM Ready + a one-line Bottom line.
 
-```bash
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-# stub mode (no key) — service boots, /health 200, /chat returns a stub
-uvicorn app:app --host 0.0.0.0 --port 8080
-```
+## Value
+Weekly analysis time cut from **2–3 hours to under 20 minutes** — the team focuses on decisions, not data wrangling.
 
-### Live model (GreenNode MaaS)
-
-Set the three env vars (see `.env.example`), then run as above:
+## How it runs
+- Scheduled daily **10:00** (`launchd`) with **Atlas auto-login** (self-heals the SSO session).
+- An **audit gate** validates every number (segment sums, forecast bounds, cross-checks) and **aborts before sending** if anything fails — nothing fabricated.
+- **CRM is draft-only** — the agent proposes; a human reviews + publishes (confirm-gated).
 
 ```bash
-export LLM_BASE_URL="https://maas-llm-aiplatform-hcm.api.vngcloud.vn/v1"
-export LLM_API_KEY="<your MaaS API key>"
-export LLM_MODEL="google/gemma-4-31b-it"   # or another enabled model
+./run_mbs_growth.sh          # auto-login + pull + audit + post (Telegram + Confluence)
+python3 mbs_growth.py --all  # same, without the SSO auto-login step
+python3 -m pytest tests/     # 38 tests
 ```
 
-## Test
+## AgentBase endpoint (try the agent)
+Deployed as a GreenNode AgentBase Custom Agent (`app.py`): `GET /health` → `{"status":"ok"}`; `POST /chat {"message":"…"}` answers questions about the MBS growth analysis using GreenNode MaaS.
 
-```bash
-bash tests/smoke.sh          # boots the app + checks every endpoint
-```
+## Layout
+| File | Purpose |
+|------|---------|
+| `mbs_growth.py` | Pipeline: pull → forecast → anomaly → report → deliver |
+| `crm_noti.py` | Action engine + CRM segment/noti generator (confirm-gated, draft-only) |
+| `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
+| `run_mbs_growth.sh` | Daily wrapper (Atlas auto-login + run) |
+| `tests/` | 38 tests |
+| `DEMO_SCRIPT.md` · `SCOPE_crm_noti.md` · `DEPLOY_RUNBOOK.md` | Demo storyboard · CRM scope · deploy guide |
 
-## Deploy
-
-See **[DEPLOY_RUNBOOK.md](./DEPLOY_RUNBOOK.md)** — the GreenNode AgentBase deploy
-steps (portal login, `/agentbase-deploy`, verify ACTIVE, public endpoint).
-
-## Example (live)
-
-```
-POST /chat  {"message":"Tell me about a time you handled a tight deadline."}
-→ 200  {"status":"success","answer":"…STAR-method model answer…","model":"google/gemma-4-31b-it"}
-```
+## Notes
+No secrets in the repo — credentials are env-injected / gitignored. Brand spelled **Zalopay**. Built on **GreenNode AgentBase** (Custom Agent runtime + MaaS LLM).

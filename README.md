@@ -154,6 +154,27 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 
 </div>
 
+## 🔌 Integrations & setup
+Growth Assistant plugs into the tools the team already uses — each via its own auth, and **no data leaves your stack**:
+
+| Tool | Used for | How it connects | You provide |
+|------|----------|-----------------|-------------|
+| **GreenNode MaaS** | the agent's LLM (Q&A, narrative) | OpenAI-compatible API | `LLM_API_KEY` · `LLM_MODEL` (`google/gemma-4-31b-it`) |
+| **GreenNode AgentBase** | hosts the agent (container runtime) | IAM service account + Container Registry | `GREENNODE_CLIENT_ID` / `_SECRET` *(deploy only)* |
+| **Atlas (Tableau)** | reads the 4 MBS dashboards | VizQL bootstrap over your SSO session | a logged-in Atlas session *(auto-login script)* |
+| **Telegram** | `/run` + `/confirm` + report delivery | Bot API (long-poll) | `TELEGRAM_BOT_TOKEN` · `TELEGRAM_GROUP_ID` |
+| **Confluence** | daily-log + PRD pages | REST API | `~/.config/confluence-token` |
+| **Zalopay CRM** | stages DRAFT push-noti | `office.zalopay.vn` API — the bot **self-sources its session** from the logged-in browser | just be logged into the CRM tool |
+
+**Quick start (local):**
+```bash
+cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
+./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
+python3 telegram_bot.py      # start the /run + /confirm bot
+python3 -m pytest tests/     # 47 tests
+```
+> 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
+
 ## 🟢 Powered by GreenNode
 Growth Assistant runs end-to-end on the **GreenNode AI Platform**:
 

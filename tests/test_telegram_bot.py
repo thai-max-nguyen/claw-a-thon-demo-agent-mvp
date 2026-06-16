@@ -44,5 +44,33 @@ def test_confirm_handles_dead_session(monkeypatch):
     assert "⚠️" in out and "session" in out.lower()
 
 
+def test_adjust_requires_run_first():
+    t.PENDING.clear()
+    out = t.handle_text("/adjust Grab 30K")
+    assert "/run" in out and "Nothing to adjust" in out
+
+
+def test_adjust_revises_pending_and_confirm_uses_latest():
+    # seed a real proposal, adjust it, and verify PENDING now holds the revised plan
+    import crm_noti as c
+    BIZ = {"MPU": {"value": 500000, "delta": "▲ +3.0%", "change": 0.03},
+           "NPU": {"value": 3000, "delta": "▼ -0.3%", "change": -0.003},
+           "FPU": {"value": 30000, "delta": "▲ +5.0%", "change": 0.05},
+           "Transactions": {"value": 3000000}, "Refund": {"value": 300000}}
+    MERCH = {"Grab": 300000, "XANH SM": 120000, "Be": 60000, "AhaMove": 20000}
+    FC = {"_target": 735000, "MPU_fc": 700000, "prev_full": 680000}
+    t.PENDING["actions"] = c.build_actions(BIZ, {}, MERCH, FC)
+    out = t.handle_text("/adjust Grab 30K, drop Be")
+    assert "Adjusted" in out and "30K" in out
+    # PENDING (what /confirm will stage) reflects the latest revision
+    assert all(a.get("merchant") != "Be" for a in t.PENDING["actions"])
+    assert "30K" in next(a for a in t.PENDING["actions"] if a.get("merchant") == "Grab")["promo"]
+    t.PENDING.clear()
+
+
+def test_help_lists_adjust():
+    assert "/adjust" in t.handle_text("/help")
+
+
 def test_unknown_command():
     assert "Unknown" in t.handle_text("/nope")

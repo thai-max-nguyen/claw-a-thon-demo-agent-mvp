@@ -196,6 +196,54 @@ def test_cannibalization_guard_on_every_action():
         assert a["level"].startswith("S")                      # campaign level S (owned channels)
 
 
+# ---- feedback / adjust loop (confirm stages the LATEST revised plan) ----
+def test_feedback_retiers_one_merchant_and_copy():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, notes = c.apply_feedback(acts, "Grab 30K")
+    grab = next(a for a in rev if a.get("merchant") == "Grab")
+    assert "30K" in grab["promo"]
+    blob = grab["noti"]["variant_a"]["title"] + grab["noti"]["variant_a"]["body"] + grab["noti"]["variant_b"]["body"]
+    assert "30K" in blob and "50K" not in blob          # embedded copy retiered too
+    assert any("Grab → 30K" in n for n in notes)
+
+
+def test_feedback_does_not_mutate_original():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    c.apply_feedback(acts, "all 30K")
+    assert any("50K" in a["promo"] for a in acts)        # original list untouched
+
+
+def test_feedback_drops_merchant_word_boundary():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, _ = c.apply_feedback(acts, "drop be")            # 'be' as a whole word → merchant Be
+    assert all(a.get("merchant") != "Be" for a in rev) and len(rev) == len(acts) - 1
+
+
+def test_feedback_drops_acquisition():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, _ = c.apply_feedback(acts, "skip acquisition")
+    assert all(a["type"] != "Acquisition" for a in rev)
+
+
+def test_feedback_all_offers():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, _ = c.apply_feedback(acts, "all 30K")
+    assert rev and all("30K" in a["promo"] for a in rev)
+
+
+def test_feedback_combined_directives():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, notes = c.apply_feedback(acts, "Grab 30K, drop Be")
+    assert all(a.get("merchant") != "Be" for a in rev)
+    assert "30K" in next(a for a in rev if a.get("merchant") == "Grab")["promo"]
+
+
+def test_feedback_unrecognised_is_noop():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rev, notes = c.apply_feedback(acts, "make it better please")
+    assert len(rev) == len(acts) and any("ignored" in n for n in notes)
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

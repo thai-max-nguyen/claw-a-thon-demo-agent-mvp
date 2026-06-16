@@ -19,8 +19,9 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 
 HELP = (
     "🤖 <b>MBS Growth Assistant</b>\n"
-    "/run — full daily analysis (pull → forecast → anomalies → action plan + CRM noti drafts)\n"
-    "/confirm — stage the proposed noti as DRAFT in the CRM tool for your review\n"
+    "/run — full daily analysis (pull → forecast → anomalies → action plan + proposed CRM campaigns)\n"
+    "/adjust &lt;changes&gt; — tweak the proposal before staging, e.g. <code>/adjust Grab 30K, drop Be</code>\n"
+    "/confirm — stage the <i>latest</i> proposal as DRAFT in the CRM (you review &amp; publish)\n"
     "/help — this message"
 )
 
@@ -80,10 +81,30 @@ def handle_text(text: str) -> str:
             return "⚠️ " + res["error"]
         PENDING["actions"] = res["actions"]
         n = len(res["actions"])
-        tail = (f"\n\n— — —\n✅ Audit passed. <b>{n} CRM noti drafts</b> ready (per-merchant deeplinks + A/B copy).\n"
-                f"Reply <b>/confirm</b> to stage them as <b>DRAFT</b> in the CRM tool — you review &amp; publish; I never publish live."
+        tail = (f"\n\n— — —\n✅ Audit passed. <b>{n} CRM campaigns proposed</b> (per-merchant deeplinks + A/B copy).\n"
+                f"• <b>/adjust</b> &lt;changes&gt; to tweak first — e.g. <code>/adjust Grab 30K, drop Be</code>\n"
+                f"• <b>/confirm</b> to stage the latest as <b>DRAFT</b> in the CRM — you review &amp; publish; I never publish live."
                 if res["ok"] else "\n\n⚠️ Audit failed — not sending. Numbers need a re-pull.")
         return res["report"] + tail
+    if cmd == "/adjust":
+        actions = PENDING.get("actions")
+        if not actions:
+            return "Nothing to adjust yet. Run <b>/run</b> first, then <b>/adjust</b> &lt;changes&gt;."
+        if not arg:
+            return ("Tell me what to change, e.g.\n<code>/adjust Grab 30K, drop Be</code>\n"
+                    "<code>/adjust all 30K</code> · <code>/adjust skip acquisition</code>")
+        import crm_noti
+        revised, notes = crm_noti.apply_feedback(actions, arg)
+        PENDING["actions"] = revised      # /confirm stages the LATEST revised plan
+        head = f"✏️ <b>Adjusted</b> — {'; '.join(notes)}"
+        if not revised:
+            return head + "\n\n(No campaigns left. Run <b>/run</b> again to start over.)"
+        lines = [head, f"\n<b>{len(revised)} campaign(s)</b> now staged-ready:"]
+        for a in revised:
+            who = a.get("merchant") or "Mobility"
+            lines.append(f"• {a['priority']} {a['type']} · {who} — <b>{a['promo']}</b>")
+        lines.append("\nReply <b>/adjust</b> again to keep tuning, or <b>/confirm</b> to stage the latest as DRAFT.")
+        return "\n".join(lines)
     if cmd == "/confirm":
         actions = PENDING.get("actions")
         if not actions:

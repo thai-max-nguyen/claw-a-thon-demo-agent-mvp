@@ -16,18 +16,19 @@
 
 ### 0:45–1:25 · The daily output (Telegram + Confluence)
 - Telegram group: scroll the 5-section message — MTD Snapshot, Segment Health (🟡 at risk), Top Anomalies (3W), Action Plan, CRM Ready, Bottom line.
-- Call out 2 real numbers: **MPU 548,636 → forecast 95.1% of target**; **NPU flat → acquisition is the constraint**.
+- Call out the read: **MPU pacing behind target, month-end forecast near target**; **NPU flat → acquisition is the binding constraint**. *(say the live figures on camera — don't commit real numbers to the repo.)*
 - Confluence daily log: show the collapsible per-day entry (tables + panels), TOC, latest-status panel.
 
 ### 1:25–2:05 · From insight to action (the differentiator)
 - Show the 4 prioritized actions: P1 Acquisition + per-merchant P2 Reactivation (Grab/XANH/Be).
-- Open one action panel: 3W cause → CRM segment (`Noti_RPU_Grab_Churn_…`, app-id include/exclude, ~129K size) → A/B noti copy with real deeplinks + send times.
+- Open one action panel: 3W cause → CRM segment (`Noti_RPU_Grab_Churn_…`, app-id include/exclude, size from CRM) → A/B noti copy with real deeplinks + send times.
+- Show the **adjust loop**: `/adjust Grab 30K, drop Be` → the plan revises live → `/confirm` stages the **latest** version (not the raw pull).
 - Then the CRM tool: show segment **16550 (Draft)** + the noti fields ready to paste.
 - Point: "Tới tận CRM segment + nội dung noti A/B — chỉ việc review & publish."
 
 ### 2:05–2:30 · Trust + close
 - One line on guardrails: "Mọi số đều truy ra dashboard thật, có audit-gate, không bịa; CRM luôn để **draft**, người duyệt."
-- Show: launchd 10:00 daily + 38 tests passing.
+- Show: passive launchd 10:00 daily (suggest-only) + active `/adjust`→`/confirm` (DRAFT) + 70 tests passing.
 - Close: "Growth Assistant — từ 2–3 tiếng còn dưới 20 phút. Team Summer Lubu."
 
 ---

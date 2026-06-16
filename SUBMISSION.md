@@ -31,7 +31,7 @@
 Kept in sync: Confluence **Daily Output** (335581153) + **PRD** (335581080) carry a matching CRM-realization panel.
 
 ## Demo flow (Telegram, live)
-`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts an executive report + 4 noti drafts → human reviews → `/confirm` → bot **self-sources its own CRM session** (no manual token) and stages the 4 as DRAFT, replying with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). Human publishes. Bot: `telegram_bot.py` + `crm_client.py` (HTML, chunked). Tests: 60.
+`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts an executive report + proposed campaigns → human reviews, optionally **`/adjust`** the plan (e.g. `/adjust Grab 30K, drop Be`) → **`/confirm`** → bot **self-sources its own CRM session** (no manual token) and stages the **latest** version as DRAFT, replying with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). Human publishes. Passive daily cron only suggests (Telegram + Confluence + dashboard) — it never writes to the CRM. Bot: `telegram_bot.py` + `crm_client.py` (HTML, chunked). Tests: 70.
 
 ## Thumbnail
 16:9 — `Thumbnail AI Agent - Summer lubu.png`

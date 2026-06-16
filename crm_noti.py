@@ -243,6 +243,73 @@ def build_actions(biz, seg, merch, fc, signals=None):
     return actions
 
 
+# merchant / lever aliases for free-text feedback (longest keys first so "xanh sm"
+# wins before "xanh", and "be" only matches as a whole word).
+_FB_NAMES = [("xanh sm", "XANH SM"), ("xanhsm", "XANH SM"), ("ahamove", "AhaMove"),
+             ("grab", "Grab"), ("xanh", "XANH SM"), ("be", "Be"),
+             ("acquisition", "_ACQ"), ("first ride", "_ACQ"), ("first-ride", "_ACQ"), ("acq", "_ACQ")]
+
+
+def _fb_match(action, target):
+    """Does this action correspond to the feedback target ('_ACQ' or a merchant name)?"""
+    if target == "_ACQ":
+        return action.get("type") == "Acquisition"
+    return action.get("merchant") == target
+
+
+def _fb_set_offer(a, amt):
+    """Retier an action's offer to amt (a string like '30'/'50') and keep the embedded
+    A/B copy consistent (the scenario templates are written at 50K)."""
+    suffix = " cho chuyến đầu" if a.get("type") == "Acquisition" else ""
+    a["promo"] = f"Giảm tự động đến {amt}K{suffix}"
+    noti = build_noti_content(a)
+    noti["promo"] = f"Giảm tự động đến {amt}K"
+    for v in ("variant_a", "variant_b"):
+        for f in ("title", "body"):
+            noti[v][f] = noti[v][f].replace("50K", f"{amt}K")
+    a["noti"] = noti
+
+
+def apply_feedback(actions, feedback):
+    """Revise a proposed action list from a human's free-text feedback, so a later
+    /confirm stages the LATEST adjusted plan (not the original pull). Deterministic +
+    unit-testable. Directives (case-insensitive; separate many with comma / newline / ;):
+      • "<merchant> 30K" / "<merchant> 50K"   → retier that merchant's offer
+      • "all 30K" / "all 50K"                   → retier every offer
+      • "drop|skip|remove|exclude <merchant>"   → remove that merchant's campaign
+      • "drop acquisition"                      → remove the P1 acquisition campaign
+    Returns (revised_actions, notes). Unrecognised input → a note; actions unchanged.
+    Re-renders each touched noti so the embedded content matches the adjustment."""
+    acts = [dict(a) for a in (actions or [])]
+    notes = []
+    for raw in re.split(r"[,\n;]+", (feedback or "")):
+        part = raw.strip().lower()
+        if not part:
+            continue
+        amt_m = re.search(r"\b(30|50)\s*k\b", part)
+        amt = amt_m.group(1) if amt_m else None
+        is_drop = bool(re.search(r"\b(drop|skip|remove|exclude|bỏ)\b", part))
+        target = next((val for key, val in _FB_NAMES if re.search(r"\b" + re.escape(key) + r"\b", part)), None)
+        if is_drop and target:
+            before = len(acts)
+            acts = [a for a in acts if not _fb_match(a, target)]
+            label = "acquisition" if target == "_ACQ" else target
+            notes.append(f"dropped {label}" if len(acts) < before else f"nothing to drop for {label}")
+        elif amt and target:
+            hit = [a for a in acts if _fb_match(a, target)]
+            for a in hit:
+                _fb_set_offer(a, amt)
+            label = "acquisition" if target == "_ACQ" else target
+            notes.append(f"{label} → {amt}K" if hit else f"no campaign matches {label}")
+        elif amt and re.search(r"\ball\b", part):
+            for a in acts:
+                _fb_set_offer(a, amt)
+            notes.append(f"all offers → {amt}K")
+        else:
+            notes.append(f'ignored "{raw.strip()[:40]}" (no recognised directive)')
+    return acts, notes
+
+
 def build_noti_content(action=None):
     """Noti copy from the Business Owner's scenario templates (A/B variants + send time +
     hypothesis), with {merchant} filled + real per-merchant deeplinks. Brand 'Zalopay'.

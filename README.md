@@ -37,41 +37,24 @@ What took **2–3 hours** now takes one message. The agent reads all 4 dashboard
 
 > 📊 *All figures in this README are **illustrative** — the agent runs on the live Zalopay Mobility dashboards; real business numbers stay internal.*
 
-## ⚙️ Two ways it works — one live dashboard
-The agent runs **two ways**, and **both publish to the same [live monitoring dashboard](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)** — so progress is visible every single day.
+## ⚙️ Two ways it works — passive by day, active on demand
+One brain, two modes — and both feed the same **[live dashboard](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)**:
 
-<img src="docs/two-ways.png" alt="Two ways AI works at Zalopay — Daily 10:00 auto (Telegram + Confluence) or on demand in Telegram (review → confirm → CRM drafts), both feeding the live dashboard" width="100%"/>
+- **🕙 Passive — every morning:** it runs itself, analyses, and posts **suggestions** to Telegram + Confluence + the dashboard. It **never touches the CRM**.
+- **💬 Active — whenever you want to act:** you pick up that suggestion, **adjust** it in plain language as often as you like, then **confirm** — only then does it stage DRAFT campaigns in the CRM.
 
-| | 🕙 **Way 1 · Daily 10:00** | 💬 **Way 2 · On demand** |
-|---|---|---|
-| **Trigger** | runs itself on a cron — no one touches it | you chat **`/run`** in Telegram |
-| **Same pipeline** | pull → forecast → audit → narrate → brief | pull → forecast → audit → narrate → brief |
-| **Same outputs** | Telegram + Confluence + **DRAFT in CRM** | review → **`/confirm`** → Telegram + Confluence + **DRAFT in CRM** |
-| **Then** | **→ syncs the live dashboard** | **→ syncs the live dashboard** |
+<img src="docs/passive-flow.png" alt="Passive daily flow: 10:00 cron pulls 4 dashboards, forecasts, posts suggestions to Confluence + Telegram + dashboard; then the active human-triggered step — adjust then confirm — stages DRAFT campaigns in the CRM" width="100%"/>
 
-The two ways run the **identical pipeline and produce the identical outputs** — brief, Confluence log, DRAFT CRM campaigns, dashboard sync. The *only* difference: the cron does it unattended, while Telegram adds a manual **`/confirm`** gate before the CRM step. Either way the CRM stays **DRAFT** — a human always publishes.
+### 🕙 Passive · 10:00 daily — analyse & suggest (never writes to CRM)
+A `launchd` cron fires every morning and runs the whole loop unattended — pull → forecast → audit → narrative — then posts the brief to **Telegram + Confluence** and **syncs the dashboard**. Everything stays a **suggestion**; nothing is written to the CRM until you decide to act.
 
-### 🕙 Way 1 · Daily 10:00 — it runs itself
-A `launchd` cron fires every morning and runs the whole loop unattended — pull → forecast → audit → narrative → post to Telegram + Confluence → **stage the campaigns as DRAFT in the CRM** → sync the dashboard. Nobody opens a tab; a human just reviews and publishes the drafts.
-
-```mermaid
-flowchart LR
-  CR["10:00 daily<br/>launchd cron"] --> P["Pull 4 dashboards<br/>forecast · anomalies · audit gate"]
-  P --> N["GreenNode MaaS<br/>narrative"]
-  N --> O(["Daily brief · campaigns"])
-  O --> TG["Telegram team"]
-  O --> CF["Confluence log"]
-  O --> RM["CRM drafts<br/>staged DRAFT"]
-  O --> DB["Live Dashboard"]
-```
-
-The same brief lands in the team chat **and** on a Confluence page anyone can read — a clean **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready**, written for a marketer, not a data engineer:
+The brief lands in the team chat **and** on a Confluence page anyone can read — a clean **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready**, written for a marketer, not a data engineer:
 > 🟡 **AT RISK** — MPU pacing to **~94% of target** · forecast lands **~101%** · binding constraint is **acquisition** → re-engage lapsed riders.
 
-<img src="docs/confluence-output.png" alt="Growth Assistant daily output auto-posted to Confluence — verdict, MTD snapshot, per-merchant momentum, staged DRAFT CRM campaigns" width="100%"/>
+<img src="docs/confluence-output.png" alt="Growth Assistant daily output auto-posted to Confluence — verdict, MTD snapshot, per-merchant momentum, proposed campaigns" width="100%"/>
 
-### 💬 Way 2 · On demand — `/run` + `/confirm` in Telegram
-Need an answer right now? Message the bot. It runs the same analysis, proposes the campaigns, and — **only after you tap `/confirm`** — stages them as **DRAFT** in the CRM. The agent proposes; the human always approves.
+### 💬 Active · on demand — adjust, then confirm
+When you're ready to act, drive it from Telegram (or a terminal): ask for the latest with **`/run`**, **tune the plan in plain language** with **`/adjust`** until it's right, then **`/confirm`** — it stages the **latest** version as **DRAFT** in the CRM. The agent proposes; you always approve.
 
 ```mermaid
 sequenceDiagram
@@ -79,25 +62,27 @@ sequenceDiagram
   participant A as Growth Assistant
   participant X as Atlas + MaaS
   participant C as Zalopay CRM
-  participant DB as Live Dashboard
-  M->>A: /run (Telegram)
+  M->>A: /run
   A->>X: pull · forecast · anomalies · audit · narrative
   X-->>A: insight
-  A-->>M: executive brief + proposed campaigns
+  A-->>M: brief + proposed campaigns
+  M->>A: /adjust Grab 30K · drop Be
+  A-->>M: revised plan — the latest version
+  Note over M,A: tune it as many times as you like
   M->>A: /confirm
-  A->>C: stage a DRAFT campaign per merchant
+  A->>C: stage the LATEST plan as DRAFT
   A-->>M: embedded content (title · body · deeplinks)
-  A->>DB: publish run
   M->>C: review & publish
-  Note over M,DB: The agent proposes — the human always approves.
 ```
+
+> 💡 **Why `/adjust` matters:** `/confirm` always stages the **latest tuned plan**, never the raw pull — so your feedback (a smaller offer, a dropped merchant, a sharper focus) is exactly what lands in the CRM. `/adjust Grab 30K, drop Be` retiers Grab's offer and removes Be in one line.
 
 **See it in action:**
 
 **1 — `/run`: one message, and the full analysis lands in Telegram**
 <img src="docs/step1-run.png" alt="/run — Growth Assistant posts the daily MTD brief in Telegram" width="100%"/>
 
-**2 — `/confirm`: review the plan, then stage the campaigns as DRAFT (with the exact content embedded)**
+**2 — `/confirm`: stage the latest plan as DRAFT (with the exact content embedded)**
 <img src="docs/step2-confirm.png" alt="/confirm — 4 push-noti drafts with title, body and deeplinks" width="100%"/>
 
 **3 — Live in the Zalopay CRM: the campaigns are staged, ready for a human to review & publish**
@@ -216,7 +201,7 @@ Growth Assistant plugs into the tools the team already uses — each via its own
 cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
 ./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
 python3 telegram_bot.py      # start the /run + /confirm bot
-python3 -m pytest tests/     # 60 tests
+python3 -m pytest tests/     # 70 tests
 ```
 > 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
 
@@ -277,12 +262,12 @@ The bot **self-sources its own CRM session** (no manual token) and stages noti a
 | `crm_client.py` | Full-auto CRM staging — self-sources its own session |
 | `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
-| `tests/` | 60 tests · see `DEMO_SCRIPT.md` |
+| `tests/` | 70 tests · see `DEMO_SCRIPT.md` |
 
 ### Run
 ```bash
 ./run_mbs_growth.sh          # auto-login → pull → audit → post
-python3 -m pytest tests/     # 60 tests passing
+python3 -m pytest tests/     # 70 tests passing
 ```
 </details>
 

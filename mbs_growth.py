@@ -793,17 +793,19 @@ def main():
             print("[confluence·MVP] FAIL:", str(e)[:80])
     if "--telegram" in sys.argv or "--all" in sys.argv:
         print("[telegram]", post_telegram(report))
-    if "--crm" in sys.argv or "--all" in sys.argv:
-        # Same downstream as the Telegram /confirm path — stage the proposed campaigns
-        # as DRAFT (INACTIVE) in the Zalopay CRM. DRAFT-only: a human still reviews &
-        # publishes; the agent never goes live. Best-effort — a dead CRM session or any
-        # error is logged and skipped, never aborting the daily run.
+    # --- ACTIVE step only — NOT part of the passive daily cron (--all) ---
+    # The 10:00 cron is PASSIVE: it analyses + posts suggestions to Telegram +
+    # Confluence + syncs the dashboard, and stops there. Staging campaigns into the
+    # CRM is the ACTIVE step, taken only on an explicit human confirm — either the
+    # Telegram /confirm path, or running this with --crm/--confirm from a terminal.
+    # DRAFT-only: a human still reviews & publishes; the agent never goes live.
+    if "--crm" in sys.argv or "--confirm" in sys.argv:
         try:
             import crm_client
             staged = crm_client.stage_drafts(actions)
-            print(f"[crm] staged {len(staged)} DRAFT noti: " + ", ".join(f"#{s['id']}" for s in staged))
+            print(f"[crm·CONFIRM] staged {len(staged)} DRAFT noti: " + ", ".join(f"#{s['id']}" for s in staged))
         except Exception as e:
-            print("[crm] draft staging skipped:", str(e)[:90])
+            print("[crm·CONFIRM] draft staging skipped:", str(e)[:90])
 
 
 if __name__ == "__main__":

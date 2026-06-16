@@ -180,6 +180,13 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 
 </div>
 
+### 📄 The daily brief, auto-logged to Confluence
+At 10:00 every morning the agent writes its full brief to a Confluence page (REST API) — verdict, MTD snapshot, per-merchant momentum, and the CRM campaigns it staged — so the whole team has one living source of truth, no one has to run anything.
+
+<img src="docs/confluence-output.png" alt="Growth Assistant daily output auto-posted to Confluence — verdict, MTD snapshot, per-merchant momentum, and staged DRAFT CRM campaigns" width="100%"/>
+
+> 📊 *Figures illustrative — the live page renders real numbers internally.*
+
 ## 📺 Live monitoring dashboard
 Beyond the daily brief, the agent serves a **live monitoring dashboard** — agent health + model polled in real time, plus an at-a-glance view of the daily run, pipeline, per-merchant momentum, and staged CRM campaigns. On-brand (Zalopay blue/green), auto-refreshing.
 
@@ -204,7 +211,7 @@ Growth Assistant plugs into the tools the team already uses — each via its own
 cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
 ./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
 python3 telegram_bot.py      # start the /run + /confirm bot
-python3 -m pytest tests/     # 59 tests
+python3 -m pytest tests/     # 56 tests
 ```
 > 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
 
@@ -212,7 +219,7 @@ python3 -m pytest tests/     # 59 tests
 Growth Assistant runs end-to-end on the **GreenNode AI Platform**:
 
 - **AgentBase** — the agent ships as a containerized **Custom Agent** runtime (`/health` + `/chat`), deployed straight from GreenNode's Container Registry.
-- **MaaS (Model-as-a-Service)** — one OpenAI-compatible endpoint to top models (**GPT · Gemini · Qwen**). The agent **pins the right model per task** — a fast model for generation, a reasoning model for scoring/analysis — instead of one-size-fits-all.
+- **MaaS (Model-as-a-Service)** — one OpenAI-compatible endpoint to GreenNode's model catalog. The agent is **model-agnostic**: each role (question / narrative / scoring) can be pinned to its own model via env, all defaulting to one configured model — so you can scale model choice up without touching code.
 - **Token-efficient by design** — the heavy lifting (metrics, pacing forecast, anomaly math) is deterministic Python over dashboard data, so **LLM tokens are spent only where they add value** (narrative + Q&A). Lower cost, faster replies — and an **audit gate** guarantees correctness no matter the model.
 - **Live now** — deployed as an AgentBase Custom Agent running **`google/gemma-4-31b-it`** (a GreenNode-enabled model, chosen for token efficiency + strong Vietnamese output). Public endpoint, `/health` → `200`.
 
@@ -266,12 +273,12 @@ The bot **self-sources its own CRM session** (no manual token) and stages noti a
 | `crm_client.py` | Full-auto CRM staging — self-sources its own session |
 | `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
-| `tests/` | 59 tests · see `DEMO_SCRIPT.md` |
+| `tests/` | 56 tests · see `DEMO_SCRIPT.md` |
 
 ### Run
 ```bash
 ./run_mbs_growth.sh          # auto-login → pull → audit → post
-python3 -m pytest tests/     # 59 tests passing
+python3 -m pytest tests/     # 56 tests passing
 ```
 </details>
 

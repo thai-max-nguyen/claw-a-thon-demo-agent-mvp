@@ -28,11 +28,10 @@ LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "").strip() or None
 LIVE = bool(LLM_API_KEY and LLM_BASE_URL and LLM_MODEL)
 
-# Per-role model selection (quality-first). Each role can be pinned to its best
-# GreenNode MaaS model; all fall back to LLM_MODEL if unset. Recommended:
-#   question -> gemini/gemini-2.5-pro      (crisp question generation)
-#   chat     -> openai/gpt-5               (best coaching narrative)
-#   evaluate -> qwen/qwen3-235b-a22b-thinking-2507  (rigorous scoring)
+# Per-role model selection (model-agnostic by design). Each role CAN be pinned to a
+# different GreenNode MaaS model via env; all default to LLM_MODEL. Today every role
+# runs LLM_MODEL (google/gemma-4-31b-it) — the GreenNode-enabled model that serves
+# reliably and is token-efficient. Set MODEL_* only if you enable more models.
 MODEL_QUESTION = os.getenv("MODEL_QUESTION", "").strip() or LLM_MODEL
 MODEL_CHAT = os.getenv("MODEL_CHAT", "").strip() or LLM_MODEL
 MODEL_EVALUATE = os.getenv("MODEL_EVALUATE", "").strip() or LLM_MODEL

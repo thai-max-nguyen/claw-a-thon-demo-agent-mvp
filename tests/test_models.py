@@ -1,8 +1,10 @@
-"""Model-support tests — prove GreenNode MaaS actually serves each model we use.
+"""Model-support tests — prove GreenNode MaaS actually serves the models the agent uses.
 
-This account has a SUBSET of the 36-model catalog enabled. We pin the models the
-agent assigns per role and verify each returns a real completion (HTTP 200 +
-non-empty content). If GreenNode grants/revokes a model, this test catches it.
+The agent is model-agnostic: each role (question/chat/evaluate) resolves to its
+MODEL_* env override or falls back to LLM_MODEL. This test reads that real config
+and verifies every distinct model it resolves to returns a real completion
+(HTTP 200 + non-empty content) and appears in the catalog. If GreenNode grants or
+revokes a model, this catches it — no hardcoded model list to drift out of date.
 
 Run:  LLM_*=... pytest -q tests/test_models.py
 Skipped entirely in stub mode (no API key).
@@ -15,12 +17,10 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app as agentapp  # noqa: E402
 
-# Models the agent assigns to roles — must all be GreenNode-enabled.
-ASSIGNED_MODELS = [
-    "google/gemma-4-31b-it",     # MODEL_QUESTION
-    "minimax/minimax-m2.5",      # MODEL_CHAT
-    "qwen/qwen3-5-27b",          # MODEL_EVALUATE
-]
+# The distinct models the app is actually configured to use (per-role + fallback).
+ASSIGNED_MODELS = sorted({m for m in (
+    agentapp.MODEL_QUESTION, agentapp.MODEL_CHAT, agentapp.MODEL_EVALUATE, agentapp.LLM_MODEL
+) if m})
 
 pytestmark = pytest.mark.skipif(not agentapp.LIVE, reason="model probes need a live API key")
 

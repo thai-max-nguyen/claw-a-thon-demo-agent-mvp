@@ -1,12 +1,12 @@
 """Strict real-data tests — run against the LIVE GreenNode MaaS model.
 
 Asserts real behavior, not just status codes:
-  - /question returns a non-stub, non-empty question
-  - /chat returns a substantive coaching answer
-  - /evaluate grades a STRONG answer high and a WEAK answer low (real grading)
+  - /question returns a non-stub, non-empty growth question
+  - /chat returns a substantive growth-analyst answer
+  - /evaluate grades a strong data-backed answer high and a weak one low (real grading)
   - session memory persists across calls
   - validation errors return 400/404
-  - telegram router maps commands -> agent calls correctly (via live agent)
+  - telegram router maps /run + /confirm + /help correctly
 
 Run:  LLM_*=... pytest -q tests/test_strict.py
 Requires the live env vars set; skips the grading-spread test in stub mode.
@@ -121,22 +121,3 @@ def test_telegram_router_help():
     h = tg.handle_text("/help")
     assert "/run" in h and "/confirm" in h          # MBS Growth Assistant commands
     assert tg.handle_text("just chatter") == ""      # privacy: ignore non-commands
-
-
-@pytest.mark.skipif(not LIVE, reason="router live calls need the model")
-def test_telegram_router_ask_live():
-    # router calls the agent over HTTP; point it at the in-process app via monkeypatch
-    out = {}
-
-    def fake_post(path, payload):
-        return client.post(path, json=payload).json()
-
-    orig = tg.agent_post
-    tg.agent_post = fake_post
-    try:
-        reply = tg.handle_text("/ask What is your greatest weakness?")
-        assert len(reply.strip()) > 30 and "[stub" not in reply
-        evrep = tg.handle_text("/evaluate Why us? ||| Because I admire the mission and want to grow.")
-        assert "Score:" in evrep
-    finally:
-        tg.agent_post = orig

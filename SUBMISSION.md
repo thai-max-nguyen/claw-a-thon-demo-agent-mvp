@@ -28,10 +28,10 @@
 - 16560 — Reactivation · XANH SM (`app/1653?id=6944`)
 - 16561 — Reactivation · Be (`app/1341`)
 
-Kept in sync: Confluence **Daily Output** (335581153, v5) + **PRD** (335581080, v4) carry a matching CRM-realization panel.
+Kept in sync: Confluence **Daily Output** (335581153) + **PRD** (335581080) carry a matching CRM-realization panel.
 
 ## Demo flow (Telegram, live)
-`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts an executive report + 4 noti drafts → human reviews → `/confirm` → bot **self-sources its own CRM session** (no manual token) and stages the 4 as DRAFT, replying with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). Human publishes. Bot: `telegram_bot.py` + `crm_client.py` (HTML, chunked). Tests: 51 pass.
+`/run` → agent runs e2e (pull → forecast → anomalies → action plan), posts an executive report + 4 noti drafts → human reviews → `/confirm` → bot **self-sources its own CRM session** (no manual token) and stages the 4 as DRAFT, replying with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). Human publishes. Bot: `telegram_bot.py` + `crm_client.py` (HTML, chunked). Tests: 56.
 
 ## Thumbnail
 16:9 — `Thumbnail AI Agent - Summer lubu.png`

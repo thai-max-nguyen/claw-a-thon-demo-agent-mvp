@@ -31,48 +31,80 @@ Every week, Zalopay Mobility's Growth Marketer burns **2–3 hours** copy-pastin
 By the time the analysis is done, half the day is gone — **before a single campaign is even built.**
 
 ## ✨ The 20-minute answer
-Send one message in Telegram — **`/run`**. The agent reads all 4 dashboards, forecasts the month, spots what's slipping, and replies with a boardroom-ready brief **plus the exact CRM campaigns to fix it**. You review, tap **`/confirm`**, and the push-notification drafts land in the CRM — ready to publish.
+What took **2–3 hours** now takes one message. The agent reads all 4 dashboards, forecasts the month, flags what's slipping, and hands back a boardroom-ready brief **plus the exact CRM campaigns to fix it** — you just review and approve.
 
 > ### 🎯 It doesn't just tell you the problem. It hands you the solution, ready to send.
 
+> 📊 *All figures in this README are **illustrative** — the agent runs on the live Zalopay Mobility dashboards; real business numbers stay internal.*
+
+## ⚙️ Two ways it works — one live dashboard
+The agent runs **two ways**, and **both publish to the same [live monitoring dashboard](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)** — so progress is visible every single day.
+
+<img src="docs/two-ways.png" alt="Two ways AI works at Zalopay — Daily 10:00 auto (Telegram + Confluence) or on demand in Telegram (review → confirm → CRM drafts), both feeding the live dashboard" width="100%"/>
+
+| | 🕙 **Way 1 · Daily 10:00** | 💬 **Way 2 · On demand** |
+|---|---|---|
+| **How** | runs itself on a cron — no one touches it | you chat **`/run`** in Telegram |
+| **Output** | brief → Telegram + Confluence | review → **`/confirm`** → DRAFT campaigns in CRM |
+| **Then** | **→ updates the live dashboard** | **→ updates the live dashboard** |
+
+### 🕙 Way 1 · Daily 10:00 — it runs itself
+A `launchd` cron fires every morning and does the whole loop unattended — pull → forecast → audit → narrative → publish. Nobody has to open a tab.
+
+```mermaid
+flowchart LR
+  CR["10:00 daily<br/>launchd cron"] --> P["Pull 4 dashboards<br/>forecast · anomalies · audit gate"]
+  P --> N["GreenNode MaaS<br/>narrative"]
+  N --> O(["Daily brief"])
+  O --> TG["Telegram team"]
+  O --> CF["Confluence log"]
+  O --> DB["Live Dashboard"]
+```
+
+The same brief lands in the team chat **and** on a Confluence page anyone can read — a clean **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready**, written for a marketer, not a data engineer:
+> 🟡 **AT RISK** — MPU pacing to **~94% of target** · forecast lands **~101%** · binding constraint is **acquisition** → re-engage lapsed riders.
+
+<img src="docs/confluence-output.png" alt="Growth Assistant daily output auto-posted to Confluence — verdict, MTD snapshot, per-merchant momentum, staged DRAFT CRM campaigns" width="100%"/>
+
+### 💬 Way 2 · On demand — `/run` + `/confirm` in Telegram
+Need an answer right now? Message the bot. It runs the same analysis, proposes the campaigns, and — **only after you tap `/confirm`** — stages them as **DRAFT** in the CRM. The agent proposes; the human always approves.
+
 ```mermaid
 sequenceDiagram
-  actor M as 🧑‍💼 Marketer
-  participant A as 🤖 Growth Assistant
-  participant AT as 📊 Atlas (4 dashboards)
-  participant LLM as 🧠 GreenNode MaaS
-  participant CF as 📄 Confluence
-  participant DB as 📺 Live Dashboard
-  participant C as 📥 Zalopay CRM
-  M->>A: /run  (Telegram)
-  A->>AT: pull MTD — MBS · Grab · Be · XANH SM
-  AT-->>A: tiles + monthly history
-  A->>A: forecast · 4-tier anomalies · audit gate
-  A->>LLM: narrative / Q&A (Gemma)
-  LLM-->>A: insight text
-  A->>CF: post daily brief (Confluence log)
-  A->>DB: publish run — progress charts + live agent health
+  actor M as Marketer
+  participant A as Growth Assistant
+  participant X as Atlas + MaaS
+  participant C as Zalopay CRM
+  participant DB as Live Dashboard
+  M->>A: /run (Telegram)
+  A->>X: pull · forecast · anomalies · audit · narrative
+  X-->>A: insight
   A-->>M: executive brief + proposed campaigns
   M->>A: /confirm
   A->>C: stage a DRAFT campaign per merchant
   A-->>M: embedded content (title · body · deeplinks)
-  M->>C: review & publish ✅
-  M->>DB: open /dashboard anytime — track progress daily
-  Note over M,C: The agent proposes — the human always approves.
+  A->>DB: publish run
+  M->>C: review & publish
+  Note over M,DB: The agent proposes — the human always approves.
 ```
 
-→ The **📺 Live Dashboard** above is a real endpoint the agent serves — [**open `/dashboard`**](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) to watch the same flow: MPU-vs-target + CRM-lift progress charts, live agent health, and staged campaigns.
+**See it in action:**
 
-## 🎥 See it in action
-
-**Step 1 — `/run`: one message, and the full analysis lands in Telegram**
+**1 — `/run`: one message, and the full analysis lands in Telegram**
 <img src="docs/step1-run.png" alt="/run — Growth Assistant posts the daily MTD brief in Telegram" width="100%"/>
 
-**Step 2 — `/confirm`: review the plan, then stage the campaigns as DRAFT (with the exact content embedded)**
+**2 — `/confirm`: review the plan, then stage the campaigns as DRAFT (with the exact content embedded)**
 <img src="docs/step2-confirm.png" alt="/confirm — 4 push-noti drafts with title, body and deeplinks" width="100%"/>
 
-**Step 3 — Live in the Zalopay CRM: the campaigns are staged, ready for a human to review & publish**
+**3 — Live in the Zalopay CRM: the campaigns are staged, ready for a human to review & publish**
 <img src="docs/step3-crm.png" alt="The 4 notifications staged as DRAFT in the Zalopay CRM tool" width="100%"/>
+
+### 📺 Both feed the live monitoring dashboard
+Whichever way it runs, the agent publishes to a **live dashboard** — agent health + model polled in real time, progress-over-time charts (MPU vs target, CRM-reactivation lift), the daily run, per-merchant momentum, and staged campaigns. On-brand (Zalopay blue/green), auto-refreshing.
+
+<img src="docs/dashboard.png" alt="Growth Assistant live monitoring dashboard — KPI tiles, progress charts, daily run, pipeline, per-merchant momentum, CRM campaigns" width="100%"/>
+
+▶️ **[Open the live dashboard ↗](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)** — runs on the deployed AgentBase endpoint.
 
 ## 📈 The impact
 
@@ -96,24 +128,16 @@ sequenceDiagram
 | Find the lever | scroll & eyeball | named, prioritized actions |
 | Build campaigns | from scratch | drafted in CRM, 1-tap publish |
 
-## 👀 What lands in your chat every morning
-
-> 🟡 **AT RISK** — MPU pacing to **~95% of target** · gap is **acquisition** (new users flat) → re-engage lapsed riders.
-
-A clean executive brief: **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready** — written for a marketer, not a data engineer.
-
-> 📊 *All figures in this README are **illustrative**. The agent runs on the live Zalopay Mobility dashboards — real business numbers stay internal.*
-
 ## 🧠 The analysis behind it (not a dumb export)
 The agent thinks like a senior growth analyst — every output traces back to live data:
 
 ```mermaid
 flowchart TD
-  D[("📊 Live dashboard data")]
-  D --> F["📈 <b>Forecast, not guesswork</b><br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
-  D --> H["🩺 <b>Health grading</b><br/>MPU · FPU · NPU · RPU vs target<br/>On Track / At Risk / Off Track"]
-  D --> A["🚦 <b>4-tier anomaly radar</b><br/>Highlight → Normal → Watch → Alert<br/>cost metrics flip polarity (a rise is bad)"]
-  F --> W["💡 <b>Explains WHY</b><br/>What · Where · Why on every finding<br/><i>e.g. new-payers a small share of first-payments → acquisition is the constraint</i>"]
+  D[("Live dashboard data")]
+  D --> F["Forecast, not guesswork<br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
+  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track / At Risk / Off Track"]
+  D --> A["4-tier anomaly radar<br/>Highlight, Normal, Watch, Alert<br/>cost metrics flip polarity: a rise is bad"]
+  F --> W["Explains WHY<br/>What · Where · Why on every finding<br/>e.g. new-payers a small share of first-payments"]
   H --> W
   A --> W
 ```
@@ -128,9 +152,9 @@ A 3-step funnel from "where's the money" to a ready CRM audience:
 
 ```mermaid
 flowchart LR
-  R["1️⃣ <b>Cover every merchant</b><br/>one campaign each<br/>momentum flags who to lean into"]
-  D["2️⃣ <b>Define the audience</b><br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
-  C["3️⃣ <b>Segment + tiered offer</b><br/>app-id include/exclude · window · est. size<br/>offer scaled to the gap (50K vs 30K)"]
+  R["1 · Cover every merchant<br/>one campaign each<br/>momentum flags who to lean into"]
+  D["2 · Define the audience<br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
+  C["3 · Segment + tiered offer<br/>app-id include/exclude · est. size<br/>offer scaled to the gap, 50K vs 30K"]
   R --> D --> C
 ```
 
@@ -172,33 +196,6 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 ## 🔒 Why you can trust it
 - **Every number is pulled live and audited** — if anything doesn't reconcile, the agent *refuses to send*. No made-up figures, ever.
 - **The agent never publishes on its own** — it proposes & drafts; a human reviews and activates.
-
-## ⚙️ Two ways it works
-
-<img src="docs/two-ways.png" alt="Two ways AI works at Zalopay — Daily 10:00 (auto → Telegram + Confluence) or On demand in Telegram: review → finalize → draft in CRM" width="100%"/>
-
-<div align="center">
-
-| 🕙 **Daily · 10:00** | 💬 **On command** |
-|:---:|:---:|
-| runs automatically | chat `/run` in Telegram |
-| posts the brief to Telegram + Confluence | review → `/confirm` → drafts in CRM |
-
-</div>
-
-### 📄 The daily brief, auto-logged to Confluence
-At 10:00 every morning the agent writes its full brief to a Confluence page (REST API) — verdict, MTD snapshot, per-merchant momentum, and the CRM campaigns it staged — so the whole team has one living source of truth, no one has to run anything.
-
-<img src="docs/confluence-output.png" alt="Growth Assistant daily output auto-posted to Confluence — verdict, MTD snapshot, per-merchant momentum, and staged DRAFT CRM campaigns" width="100%"/>
-
-> 📊 *Figures illustrative — the live page renders real numbers internally.*
-
-## 📺 Live monitoring dashboard
-Beyond the daily brief, the agent serves a **live monitoring dashboard** — agent health + model polled in real time, plus an at-a-glance view of the daily run, pipeline, per-merchant momentum, and staged CRM campaigns. On-brand (Zalopay blue/green), auto-refreshing.
-
-<img src="docs/dashboard.png" alt="Growth Assistant live monitoring dashboard — agent health, daily run, pipeline, per-merchant momentum, CRM campaigns" width="100%"/>
-
-▶️ **Live:** [`/dashboard`](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) on the deployed AgentBase endpoint.
 
 ## 🔌 Integrations & setup
 Growth Assistant plugs into the tools the team already uses — each via its own auth, and **no data leaves your stack**:
@@ -250,14 +247,14 @@ Today the agent is dashboard-bound — it only claims what the dashboards can pr
 ### How it thinks
 ```mermaid
 flowchart LR
-  A[4 Atlas dashboards] --> B[Pull MTD]
-  B --> C[Forecast · pacing]
-  C --> D[Anomalies · 4-tier]
-  D --> E[Action plan · P1 Acquisition + P2 Reactivation]
-  E --> F[CRM drafts · segment + A/B noti]
-  B --> G{Audit gate}
-  G -- fail --> X[Abort · never send]
-  G -- pass --> H[Telegram + Confluence]
+  A["4 Atlas dashboards"] --> B["Pull MTD"]
+  B --> C["Forecast · pacing"]
+  C --> D["Anomalies · 4-tier"]
+  D --> E["Action plan · P1 Acquisition + P2 Reactivation"]
+  E --> F["CRM drafts · segment + A/B noti"]
+  B --> G{"Audit gate"}
+  G -- fail --> X["Abort · never send"]
+  G -- pass --> H["Telegram + Confluence"]
   F --> H
 ```
 

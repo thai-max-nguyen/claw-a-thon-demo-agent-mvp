@@ -1,3 +1,4 @@
+# AgentBase Custom Agent image — FastAPI growth agent (app.py), served on :8080.
 FROM python:3.11-slim
 
 WORKDIR /app

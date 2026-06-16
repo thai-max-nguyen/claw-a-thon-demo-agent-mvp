@@ -104,11 +104,11 @@ _DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
        <div class="step">Action plan<span class="s">&#10003;</span></div>
        <div class="step">CRM drafts<span class="s">&#10003;</span></div>
      </div></div>
-   <div class="card full"><h3>Merchant momentum &middot; illustrative</h3>
+   <div class="card full"><h3>Every merchant covered &middot; momentum = where to lean in &middot; illustrative</h3>
      <table><tr><th>Merchant</th><th>Share</th><th>Full-month trend</th><th>Projected vs last month</th><th>Lever</th></tr>
        <tr><td>Grab</td><td>~60%</td><td class="up">accelerating</td><td class="up">+ slightly up</td><td>Reactivation</td></tr>
        <tr><td>XANH SM</td><td>~24%</td><td class="flat">steady</td><td class="flat">flat</td><td>Reactivation</td></tr>
-       <tr><td>Be</td><td>~13%</td><td class="down">decelerating</td><td class="down">projected down</td><td>Reactivation (bumped)</td></tr>
+       <tr><td>Be</td><td>~13%</td><td class="down">decelerating</td><td class="down">projected down</td><td>Reactivation &middot; lean in</td></tr>
        <tr><td>AhaMove</td><td>~3%</td><td class="flat">steady</td><td class="flat">-</td><td>-</td></tr>
      </table></div>
    <div class="card full"><h3>CRM campaigns staged &middot; DRAFT (human publishes)</h3>

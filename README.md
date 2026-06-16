@@ -5,10 +5,10 @@
 # 🚀 Growth Assistant
 ### Your AI Growth Analyst for Zalopay Mobility
 
-[![typing](https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=2800&pause=900&color=7C3AED&center=true&vCenter=true&width=820&lines=4+dashboards+-%3E+one+decision%2C+every+morning;2-3+hours+-%3E+under+20+minutes;Insight+-%3E+ready-to-send+CRM+campaigns;The+agent+proposes+-%3E+you+approve)](https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp)
+[![typing](https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=2800&pause=900&color=0045FF&center=true&vCenter=true&width=820&lines=4+dashboards+-%3E+one+decision%2C+every+morning;2-3+hours+-%3E+under+20+minutes;Insight+-%3E+ready-to-send+CRM+campaigns;The+agent+proposes+-%3E+you+approve)](https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp)
 
-![Team](https://img.shields.io/badge/Team-Summer%20Lubu-7c3aed?style=flat-square)
-![Track](https://img.shields.io/badge/Track-Data%20Analysis-2563eb?style=flat-square)
+![Team](https://img.shields.io/badge/Team-Summer%20Lubu-0045FF?style=flat-square)
+![Track](https://img.shields.io/badge/Track-Data%20Analysis-00B14F?style=flat-square)
 ![Built on](https://img.shields.io/badge/Powered%20by-GreenNode%20AgentBase-16a34a?style=flat-square)
 [![Endpoint live](https://img.shields.io/badge/endpoint-live%20%E2%9C%93-22c55e?style=flat-square)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/health)
 ![Model](https://img.shields.io/badge/model-gemma--4--31b--it-f59e0b?style=flat-square)
@@ -39,13 +39,21 @@ Send one message in Telegram — **`/run`**. The agent reads all 4 dashboards, f
 sequenceDiagram
   actor M as 🧑‍💼 Marketer
   participant A as 🤖 Growth Assistant
-  participant C as 📥 CRM tool
-  M->>A: /run
-  A->>A: read 4 dashboards · forecast · anomalies · audit
+  participant AT as 📊 Atlas (4 dashboards)
+  participant LLM as 🧠 GreenNode MaaS
+  participant CF as 📄 Confluence
+  participant C as 📥 Zalopay CRM
+  M->>A: /run  (Telegram)
+  A->>AT: pull MTD — MBS · Grab · Be · XANH SM
+  AT-->>A: tiles + monthly history
+  A->>A: forecast · 4-tier anomalies · audit gate
+  A->>LLM: narrative / Q&A (Gemma)
+  LLM-->>A: insight text
+  A->>CF: post daily brief (Confluence log)
   A-->>M: executive brief + proposed campaigns
   M->>A: /confirm
-  A->>C: stage 4 push-noti as DRAFT
-  A-->>M: shows embedded content (title · body · deeplinks)
+  A->>C: stage a DRAFT campaign per merchant
+  A-->>M: embedded content (title · body · deeplinks)
   M->>C: review & publish ✅
   Note over M,C: The agent proposes — the human always approves.
 ```
@@ -115,13 +123,13 @@ A 3-step funnel from "where's the money" to a ready CRM audience:
 
 ```mermaid
 flowchart LR
-  R["1️⃣ <b>Rank by impact + momentum</b><br/>merchants by MPU share<br/>decelerating merchants bumped up"]
+  R["1️⃣ <b>Cover every merchant</b><br/>one campaign each<br/>momentum flags who to lean into"]
   D["2️⃣ <b>Define the audience</b><br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
   C["3️⃣ <b>Segment + tiered offer</b><br/>app-id include/exclude · window · est. size<br/>offer scaled to the gap (50K vs 30K)"]
   R --> D --> C
 ```
 
-## 🧭 Where the revenue is (the agent prioritizes automatically)
+## 🧭 Every merchant gets a campaign — momentum tells you where to lean in
 
 ```mermaid
 pie showData title Mobility MPU share by merchant (illustrative)
@@ -130,7 +138,7 @@ pie showData title Mobility MPU share by merchant (illustrative)
   "Be" : 13
   "AhaMove" : 3
 ```
-→ It focuses reactivation on the **biggest pools first** (here Grab & XANH SM) — that's where the paying users are. *(shares illustrative; the agent computes them live.)*
+→ The agent builds a tailored campaign for **all four merchants** — and reads each one's momentum to tell you *where to lean in*: a **decelerating** merchant gets a stronger nudge, a healthy one a lighter touch. Grow every merchant, not just the big ones. *(shares illustrative; computed live.)*
 
 ## 🎬 From insight to action — campaigns ready to publish
 Four push-notification drafts with **real deeplinks + A/B copy**, staged in the CRM as **DRAFT** (you approve & publish — the agent never sends on its own):
@@ -164,6 +172,13 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 | posts the brief to Telegram + Confluence | review → `/confirm` → drafts in CRM |
 
 </div>
+
+## 📺 Live monitoring dashboard
+Beyond the daily brief, the agent serves a **live monitoring dashboard** — agent health + model polled in real time, plus an at-a-glance view of the daily run, pipeline, per-merchant momentum, and staged CRM campaigns. On-brand (Zalopay blue/green), auto-refreshing.
+
+<img src="docs/dashboard.png" alt="Growth Assistant live monitoring dashboard — agent health, daily run, pipeline, per-merchant momentum, CRM campaigns" width="100%"/>
+
+▶️ **Live:** [`/dashboard`](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) on the deployed AgentBase endpoint.
 
 ## 🔌 Integrations & setup
 Growth Assistant plugs into the tools the team already uses — each via its own auth, and **no data leaves your stack**:

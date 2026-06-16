@@ -3,9 +3,9 @@
 Full version. Endpoints:
   GET  /health                 -> liveness probe (200)
   GET  /                       -> agent metadata + capabilities
-  POST /question               -> generate an interview question (by category/role)
-  POST /chat                   -> coaching answer to an interview question
-  POST /evaluate               -> score a candidate's answer (0-100) + feedback
+  POST /question               -> a growth-diagnostic question (by category/merchant)
+  POST /chat                   -> growth-analyst answer about Zalopay Mobility metrics/actions
+  POST /evaluate               -> score a proposed growth action (0-100) + feedback
   GET  /session/{sid}          -> retrieve a session's Q&A history
   DELETE /session/{sid}        -> clear a session
 
@@ -36,7 +36,8 @@ MODEL_QUESTION = os.getenv("MODEL_QUESTION", "").strip() or LLM_MODEL
 MODEL_CHAT = os.getenv("MODEL_CHAT", "").strip() or LLM_MODEL
 MODEL_EVALUATE = os.getenv("MODEL_EVALUATE", "").strip() or LLM_MODEL
 
-CATEGORIES = ["behavioral", "technical", "system-design", "hr"]
+CATEGORIES = ["acquisition", "retention", "forecast", "anomaly"]
+MERCHANTS = ["Grab", "XANH SM", "Be", "all"]
 
 app = FastAPI(
     title="Growth Assistant — Zalopay Mobility",
@@ -90,8 +91,8 @@ def _remember(sid: Optional[str], role: str, content: str) -> None:
 
 # ---------------- models ----------------
 class QuestionReq(BaseModel):
-    category: str = Field(default="behavioral", description="behavioral|technical|system-design|hr")
-    role: str = Field(default="Product Manager", description="target job role")
+    category: str = Field(default="acquisition", description="acquisition|retention|forecast|anomaly")
+    merchant: str = Field(default="all", description="Grab | XANH SM | Be | all")
     session_id: Optional[str] = None
 
 
@@ -129,12 +130,13 @@ def question(req: QuestionReq):
     if req.category not in CATEGORIES:
         raise HTTPException(status_code=400, detail=f"category must be one of {CATEGORIES}")
     sid = req.session_id or str(uuid.uuid4())
-    sys = ("You are an expert technical interviewer. Generate ONE concise, realistic "
-           f"{req.category} interview question for a {req.role} candidate. Question only, no preamble.")
-    text, model = _llm(sys, f"Generate one {req.category} question for a {req.role}.", max_tokens=120, model=MODEL_QUESTION)
-    _remember(sid, "interviewer", text)
+    sys = ("You are a senior growth analyst for Zalopay Mobility (MBS). Generate ONE sharp, "
+           f"data-driven diagnostic question the growth team should investigate about {req.category} "
+           f"for {req.merchant}. Question only, no preamble.")
+    text, model = _llm(sys, f"One {req.category} diagnostic question for {req.merchant}.", max_tokens=120, model=MODEL_QUESTION)
+    _remember(sid, "analyst", text)
     return {"status": "success" if LIVE else "stub", "session_id": sid,
-            "category": req.category, "role": req.role, "question": text, "model": model}
+            "category": req.category, "merchant": req.merchant, "question": text, "model": model}
 
 
 @app.post("/chat")
@@ -142,11 +144,13 @@ def chat(req: ChatReq):
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
     sid = req.session_id
-    _remember(sid, "candidate", req.message)
-    sys = ("You are an interview coach. Give a structured, actionable model answer to the "
-           "candidate's interview question. Use the STAR method where relevant and add one short coaching tip.")
+    _remember(sid, "user", req.message)
+    sys = ("You are Growth Assistant, a senior growth analyst for Zalopay Mobility (MBS). Answer the "
+           "user's question about mobility growth — MPU/NPU/FPU/RPU metrics, pacing forecasts, anomalies, "
+           "merchant segments (Grab/XANH SM/Be), and CRM push-notification actions — concisely and "
+           "practically, ending with a concrete recommended next step.")
     text, model = _llm(sys, req.message, model=MODEL_CHAT)
-    _remember(sid, "coach", text)
+    _remember(sid, "assistant", text)
     return {"status": "success" if LIVE else "stub", "session_id": sid, "answer": text, "model": model}
 
 
@@ -154,9 +158,10 @@ def chat(req: ChatReq):
 def evaluate(req: EvaluateReq):
     if not req.question.strip() or not req.answer.strip():
         raise HTTPException(status_code=400, detail="question and answer are required")
-    sys = ("You are a strict interview grader. Score the candidate's answer 0-100 and give 2-3 bullet "
-           "points of feedback. Start your reply with 'SCORE: <n>/100' on the first line, then the feedback.")
-    user = f"Question: {req.question}\n\nCandidate answer: {req.answer}"
+    sys = ("You are a senior growth reviewer for Zalopay Mobility. Score the proposed growth answer/action "
+           "0-100 on impact, targeting precision, and measurability, then give 2-3 bullet points of feedback. "
+           "Start your reply with 'SCORE: <n>/100' on the first line, then the feedback.")
+    user = f"Question: {req.question}\n\nProposed growth answer/action: {req.answer}"
     text, model = _llm(sys, user, max_tokens=700, model=MODEL_EVALUATE)
     score = None
     # scan ALL lines for "SCORE: n" — reasoning models may emit preamble first
@@ -166,7 +171,7 @@ def evaluate(req: EvaluateReq):
         score = min(int(m.group(1)), 100)
     elif not LIVE:
         score = 0
-    _remember(req.session_id, "grader", text)
+    _remember(req.session_id, "reviewer", text)
     return {"status": "success" if LIVE else "stub", "session_id": req.session_id,
             "score": score, "feedback": text, "model": model}
 

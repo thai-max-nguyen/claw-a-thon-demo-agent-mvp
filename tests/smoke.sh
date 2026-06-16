@@ -19,9 +19,9 @@ check() { # label expected actual
 
 check "/health 200"      200 "$(curl -s -o /dev/null -w '%{http_code}' $P/health)"
 check "/ root 200"       200 "$(curl -s -o /dev/null -w '%{http_code}' $P/)"
-check "/question 200"    200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/question -H 'Content-Type: application/json' -d '{"category":"behavioral","role":"PM","session_id":"t1"}')"
-check "/chat 200"        200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/chat -H 'Content-Type: application/json' -d '{"message":"Tell me about yourself","session_id":"t1"}')"
-check "/evaluate 200"    200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/evaluate -H 'Content-Type: application/json' -d '{"question":"Why us?","answer":"Because I admire the mission.","session_id":"t1"}')"
+check "/question 200"    200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/question -H 'Content-Type: application/json' -d '{"category":"retention","merchant":"Grab","session_id":"t1"}')"
+check "/chat 200"        200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/chat -H 'Content-Type: application/json' -d '{"message":"Why is MPU pacing behind target?","session_id":"t1"}')"
+check "/evaluate 200"    200 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/evaluate -H 'Content-Type: application/json' -d '{"question":"How to lift NPU?","answer":"Run a first-ride acquisition push to high-intent non-payers.","session_id":"t1"}')"
 check "/session 200"     200 "$(curl -s -o /dev/null -w '%{http_code}' $P/session/t1)"
 check "bad category 400" 400 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/question -H 'Content-Type: application/json' -d '{"category":"nope"}')"
 check "empty chat 400"   400 "$(curl -s -o /dev/null -w '%{http_code}' -X POST $P/chat -H 'Content-Type: application/json' -d '{"message":""}')"

@@ -34,19 +34,19 @@ def test_health():
 def test_root_metadata():
     d = client.get("/").json()
     assert d["mode"] == ("live" if LIVE else "stub")
-    assert set(agentapp.CATEGORIES) == {"behavioral", "technical", "system-design", "hr"}
+    assert set(agentapp.CATEGORIES) == {"acquisition", "retention", "forecast", "anomaly"}
 
 
 def test_question_real():
-    d = client.post("/question", json={"category": "technical", "role": "Backend Engineer"}).json()
-    assert d["category"] == "technical"
+    d = client.post("/question", json={"category": "retention", "merchant": "Grab"}).json()
+    assert d["category"] == "retention"
     assert len(d["question"].strip()) > 15
     if LIVE:
         assert d["status"] == "success" and "[stub" not in d["question"]
 
 
 def test_chat_real():
-    d = client.post("/chat", json={"message": "How do you handle conflict on a team?"}).json()
+    d = client.post("/chat", json={"message": "Why is MPU pacing behind target this month?"}).json()
     assert len(d["answer"].strip()) > 30
     if LIVE:
         assert d["status"] == "success" and "[stub" not in d["answer"]
@@ -66,12 +66,12 @@ def test_evaluate_validation():
 
 def test_session_memory():
     sid = f"strict-{uuid.uuid4().hex[:8]}"
-    client.post("/question", json={"category": "hr", "role": "PM", "session_id": sid})
-    client.post("/chat", json={"message": "Why do you want this job?", "session_id": sid})
+    client.post("/question", json={"category": "retention", "merchant": "Grab", "session_id": sid})
+    client.post("/chat", json={"message": "Which segment should we reactivate first?", "session_id": sid})
     turns = client.get(f"/session/{sid}").json()["turns"]
     assert len(turns) >= 2
     roles = [t["role"] for t in turns]
-    assert "interviewer" in roles and "coach" in roles
+    assert "analyst" in roles and "assistant" in roles
     # clear
     assert client.delete(f"/session/{sid}").json()["cleared"] is True
     assert client.get(f"/session/{sid}").status_code == 404

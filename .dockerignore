@@ -13,6 +13,3 @@ __pycache__/
 *.md
 tests/
 .env.example
-PLAN.md
-TEST_REPORT.md
-DEPLOY_RUNBOOK.md

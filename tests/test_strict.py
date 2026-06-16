@@ -103,15 +103,16 @@ def test_session_missing():
 
 @pytest.mark.skipif(not LIVE, reason="grading spread needs the live model")
 def test_evaluate_grading_spread():
-    q = "Tell me about a time you led a project under pressure."
-    strong = ("Situation: our launch was moved up two weeks. Task: ship marketing assets without "
-              "burning out the team. Action: I re-prioritised the backlog, set hourly milestones, "
-              "and froze non-urgent requests. Result: we delivered 24h early and lead-gen rose 15%.")
-    weak = "I don't know, I just did it somehow."
+    q = "MPU is pacing behind target this month — what's the lever and why?"
+    strong = ("Pacing is ~94% MTD but the month-end forecast lands at 101%, so the gap is timing, not demand. "
+              "The binding stage is acquisition: new-payers are a small share of first-payments while retention "
+              "is steady. Lever: re-engage lapsed riders with a tiered reactivation push (50K where the gap is "
+              "largest, 30K elsewhere), and lean harder on Be, which is decelerating MoM.")
+    weak = "I don't know, MPU is just low somehow, maybe spend more money everywhere."
     s_strong = client.post("/evaluate", json={"question": q, "answer": strong}).json()["score"]
     s_weak = client.post("/evaluate", json={"question": q, "answer": weak}).json()["score"]
     assert isinstance(s_strong, int) and isinstance(s_weak, int)
-    assert s_strong >= 60, f"strong STAR answer scored too low: {s_strong}"
+    assert s_strong >= 60, f"strong data-backed answer scored too low: {s_strong}"
     assert s_weak <= 40, f"weak answer scored too high: {s_weak}"
     assert s_strong > s_weak
 

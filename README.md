@@ -42,6 +42,7 @@ sequenceDiagram
   participant AT as 📊 Atlas (4 dashboards)
   participant LLM as 🧠 GreenNode MaaS
   participant CF as 📄 Confluence
+  participant DB as 📺 Live Dashboard
   participant C as 📥 Zalopay CRM
   M->>A: /run  (Telegram)
   A->>AT: pull MTD — MBS · Grab · Be · XANH SM
@@ -50,16 +51,17 @@ sequenceDiagram
   A->>LLM: narrative / Q&A (Gemma)
   LLM-->>A: insight text
   A->>CF: post daily brief (Confluence log)
+  A->>DB: publish run — progress charts + live agent health
   A-->>M: executive brief + proposed campaigns
   M->>A: /confirm
   A->>C: stage a DRAFT campaign per merchant
   A-->>M: embedded content (title · body · deeplinks)
   M->>C: review & publish ✅
+  M->>DB: open /dashboard anytime — track progress daily
   Note over M,C: The agent proposes — the human always approves.
-  Note over A,CF: 📺 Also live at /dashboard — progress charts + CRM effect, tracked daily
 ```
 
-▶️ **Live monitoring dashboard:** [open `/dashboard`](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) — daily MPU-vs-target + CRM-reactivation-lift charts, agent health, and staged campaigns.
+→ The **📺 Live Dashboard** above is a real endpoint the agent serves — [**open `/dashboard`**](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) to watch the same flow: MPU-vs-target + CRM-lift progress charts, live agent health, and staged campaigns.
 
 ## 🎥 See it in action
 

@@ -44,20 +44,24 @@ The agent runs **two ways**, and **both publish to the same [live monitoring das
 
 | | 🕙 **Way 1 · Daily 10:00** | 💬 **Way 2 · On demand** |
 |---|---|---|
-| **How** | runs itself on a cron — no one touches it | you chat **`/run`** in Telegram |
-| **Output** | brief → Telegram + Confluence | review → **`/confirm`** → DRAFT campaigns in CRM |
-| **Then** | **→ updates the live dashboard** | **→ updates the live dashboard** |
+| **Trigger** | runs itself on a cron — no one touches it | you chat **`/run`** in Telegram |
+| **Same pipeline** | pull → forecast → audit → narrate → brief | pull → forecast → audit → narrate → brief |
+| **Same outputs** | Telegram + Confluence + **DRAFT in CRM** | review → **`/confirm`** → Telegram + Confluence + **DRAFT in CRM** |
+| **Then** | **→ syncs the live dashboard** | **→ syncs the live dashboard** |
+
+The two ways run the **identical pipeline and produce the identical outputs** — brief, Confluence log, DRAFT CRM campaigns, dashboard sync. The *only* difference: the cron does it unattended, while Telegram adds a manual **`/confirm`** gate before the CRM step. Either way the CRM stays **DRAFT** — a human always publishes.
 
 ### 🕙 Way 1 · Daily 10:00 — it runs itself
-A `launchd` cron fires every morning and does the whole loop unattended — pull → forecast → audit → narrative → publish. Nobody has to open a tab.
+A `launchd` cron fires every morning and runs the whole loop unattended — pull → forecast → audit → narrative → post to Telegram + Confluence → **stage the campaigns as DRAFT in the CRM** → sync the dashboard. Nobody opens a tab; a human just reviews and publishes the drafts.
 
 ```mermaid
 flowchart LR
   CR["10:00 daily<br/>launchd cron"] --> P["Pull 4 dashboards<br/>forecast · anomalies · audit gate"]
   P --> N["GreenNode MaaS<br/>narrative"]
-  N --> O(["Daily brief"])
+  N --> O(["Daily brief · campaigns"])
   O --> TG["Telegram team"]
   O --> CF["Confluence log"]
+  O --> RM["CRM drafts<br/>staged DRAFT"]
   O --> DB["Live Dashboard"]
 ```
 

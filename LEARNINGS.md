@@ -30,3 +30,8 @@ Hard-won, reusable lessons from building + deploying this agent. Read before the
 - **No fabrication** — only claim what the dashboards prove; derived signals are fine *if computed from real pulls*. This honesty is a strength with judges.
 - **No real business data in a public repo** — README figures + code targets are **illustrative**; real numbers stay internal / env-injected. Secrets gitignored, read in-memory only.
 - **Draft-only CRM** — the agent proposes + embeds content; a human reviews & publishes.
+
+## 📺 Live dashboard (cheap + on-brand)
+- Serve monitoring as a `GET /dashboard` route on the **same deployed agent** (`app.py`) → instantly "live", no extra infra. Self-contained HTML (inline CSS + **SVG charts**, tiny JS polling `/health` + `/` for live status). Point the repo homepage at the `/dashboard` URL.
+- **Owners want trends first** — lead with progress-over-time charts (MPU vs target line, CRM reactivation-lift bars). Fake/illustrative series is fine when there's no live feed; label it.
+- **Zalopay brand**: royal blue `#0045FF` + green `#00D95F`, light bg, **Be Vietnam Pro**, rounded cards; green = healthy/up, amber/red = risk. Logo = blue "Zalo" + green "pay"; brand spelled **Zalopay**.

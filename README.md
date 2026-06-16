@@ -133,9 +133,9 @@ The agent thinks like a senior growth analyst — every output traces back to li
 
 ```mermaid
 flowchart TD
-  D[("Live dashboard data")]
+  D["📊 Live dashboard data"]
   D --> F["Forecast, not guesswork<br/>this month's pace vs last month's curve<br/>commits a number only when confident"]
-  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track / At Risk / Off Track"]
+  D --> H["Health grading<br/>MPU · FPU · NPU · RPU vs target<br/>On Track, At Risk, Off Track"]
   D --> A["4-tier anomaly radar<br/>Highlight, Normal, Watch, Alert<br/>cost metrics flip polarity: a rise is bad"]
   F --> W["Explains WHY<br/>What · Where · Why on every finding<br/>e.g. new-payers a small share of first-payments"]
   H --> W

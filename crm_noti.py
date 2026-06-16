@@ -188,9 +188,11 @@ def build_actions(biz, seg, merch, fc):
             },
         })
 
-    # attach a tailored noti to each action
+    # attach a tailored noti + CRM label name to each action.
+    # Label rule: "[MBS] <Merchant> <segment name>" (cross-merchant Acquisition -> "Mobility").
     for a in actions:
         a["noti"] = build_noti_content(a)
+        a["noti_name"] = f"[MBS] {a.get('merchant') or 'Mobility'} {a['segment']['name']}"
     return actions
 
 

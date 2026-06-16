@@ -95,6 +95,17 @@ def test_acquisition_noti_has_no_merchant_placeholder():
     assert "{merchant}" not in n["variant_b"]["body"]
 
 
+def test_noti_label_rule():
+    # rule: "[MBS] <Merchant> <segment name>"; cross-merchant Acquisition -> "Mobility"
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    by = {a.get("merchant"): a for a in acts}
+    assert by["Grab"]["noti_name"] == "[MBS] Grab " + by["Grab"]["segment"]["name"]
+    assert by["XANH SM"]["noti_name"] == "[MBS] XANH SM " + by["XANH SM"]["segment"]["name"]
+    acq = next(a for a in acts if a["type"] == "Acquisition")
+    assert acq["noti_name"].startswith("[MBS] Mobility ")
+    assert all(a["noti_name"].startswith("[MBS] ") for a in acts)
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

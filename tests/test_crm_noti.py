@@ -79,6 +79,22 @@ def test_acquisition_deeplink_is_per_merchant_note():
     assert "see deeplink table" in n["zpa_redirection"]
 
 
+def test_no_placeholder_leaks_in_any_action():
+    # every action's noti copy must be fully rendered — no literal {merchant} shipped,
+    # including the cross-merchant Acquisition action (which has no merchant).
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    for a in acts:
+        for var in ("variant_a", "variant_b"):
+            for fld in ("title", "body"):
+                assert "{merchant}" not in a["noti"][var][fld], f"{a.get('type')}/{var}/{fld} leaked {{merchant}}"
+
+
+def test_acquisition_noti_has_no_merchant_placeholder():
+    n = c.build_noti_content({"type": "Acquisition"})       # no merchant
+    assert "{merchant}" not in n["variant_a"]["body"]
+    assert "{merchant}" not in n["variant_b"]["body"]
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

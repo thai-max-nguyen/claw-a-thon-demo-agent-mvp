@@ -44,10 +44,10 @@ DEEPLINKS = {
 SCENARIOS = {
     "Acquisition": {  # SCENARIO 1 — FPU (first-time, never rode)
         "A": {"variant": "Urgency", "title": "Đặt xe lần đầu, giảm ngay đến 50K",
-              "body": "Dùng Zalopay thanh toán {merchant} hôm nay — tự động giảm đến 50K cho chuyến đầu.",
+              "body": "Dùng Zalopay thanh toán chuyến xe đầu tiên hôm nay — tự động giảm đến 50K cho chuyến đầu.",
               "send": "7:00–8:30 SA", "hyp": "Urgency + số tiền lớn tăng CTR first-time users"},
         "B": {"variant": "Value", "title": "Chuyến đầu tiên với Zalopay — giảm đến 50K",
-              "body": "Thanh toán {merchant} qua Zalopay, chuyến đầu được giảm tự động đến 50K. Thử ngay!",
+              "body": "Thanh toán chuyến xe đầu tiên qua Zalopay, chuyến đầu được giảm tự động đến 50K. Thử ngay!",
               "send": "11:30 SA hoặc 5:30 CH", "hyp": "Value framing rõ ràng tăng conversion"}},
     "Reactivation": {  # SCENARIO 2 — RPU (used before, not back this month)
         "A": {"variant": "Personalized", "title": "{first_name}, tháng này chưa đặt xe?",
@@ -201,7 +201,9 @@ def build_noti_content(action=None):
     a = action or {"type": "Reactivation"}
     typ = a.get("type", "Reactivation"); mer = a.get("merchant")
     tmpl = SCENARIOS.get(typ, SCENARIOS["Reactivation"])
-    fill = (lambda s: s.replace("{merchant}", mer)) if mer else (lambda s: s)
+    # merchant actions fill the name; merchant-agnostic actions (e.g. Acquisition)
+    # degrade any stray {merchant} to a generic term so no literal placeholder ever ships.
+    fill = (lambda s: s.replace("{merchant}", mer)) if mer else (lambda s: s.replace("{merchant}", "đặt xe"))
     def variant(v):
         return {"variant": v["variant"], "title": fill(v["title"]), "body": fill(v["body"]),
                 "send": v["send"], "hyp": v["hyp"]}

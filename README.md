@@ -12,6 +12,8 @@
 
 [![Watch the 2-min demo](https://img.shields.io/badge/▶%20Watch%20the%202--min%20demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](DEMO_VIDEO_URL)
 
+### ⭐ Like it? Give us a **star** and a **vote** — *Team Summer Lubu* 💜
+
 </div>
 
 ---
@@ -26,6 +28,21 @@ By the time the analysis is done, half the day is gone — **before a single cam
 Send one message in Telegram — **`/run`**. The agent reads all 4 dashboards, forecasts the month, spots what's slipping, and replies with a boardroom-ready brief **plus the exact CRM campaigns to fix it**. You review, tap **`/confirm`**, and the push-notification drafts land in the CRM — ready to publish.
 
 > ### 🎯 It doesn't just tell you the problem. It hands you the solution, ready to send.
+
+```mermaid
+sequenceDiagram
+  actor M as 🧑‍💼 Marketer
+  participant A as 🤖 Growth Assistant
+  participant C as 📥 CRM tool
+  M->>A: /run
+  A->>A: read 4 dashboards · forecast · anomalies · audit
+  A-->>M: executive brief + proposed campaigns
+  M->>A: /confirm
+  A->>C: stage 4 push-noti as DRAFT
+  A-->>M: shows embedded content (title · body · deeplinks)
+  M->>C: review & publish ✅
+  Note over M,C: The agent proposes — the human always approves.
+```
 
 ## 📈 The impact
 
@@ -166,4 +183,10 @@ python3 -m pytest tests/     # 47 tests passing
 ```
 </details>
 
-<div align="center"><sub>Built on <b>GreenNode AgentBase + MaaS</b> · Brand spelled <b>Zalopay</b> · Team <b>Summer Lubu</b></sub></div>
+<div align="center">
+
+### ⭐ If this made you go "wow" — drop a star and a vote for **Team Summer Lubu** 💜
+
+<sub>Built on <b>GreenNode AgentBase + MaaS</b> · Brand spelled <b>Zalopay</b> · Team <b>Summer Lubu</b></sub>
+
+</div>

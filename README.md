@@ -54,6 +54,19 @@ Send one message in Telegram — **`/run`**. The agent reads all 4 dashboards, f
 
 A clean executive brief: **Verdict · MTD Snapshot · Segment Health · Top Anomalies · Action Plan · CRM-Ready** — written for a marketer, not a data engineer.
 
+## 🧠 The analysis behind it (not a dumb export)
+The agent thinks like a senior growth analyst:
+
+- **Forecast, not guesswork** — it compares this month's *daily pace* against last month's full curve to project end-of-month MPU, and only commits a number when confidence is high.
+- **Health grading** — every segment (MPU · FPU · NPU · RPU) is scored against the monthly target → **On Track / At Risk / Off Track**.
+- **4-tier anomaly radar** — changes are auto-classified *Highlight → Normal → Watch → Alert*; cost metrics like refund flip polarity (a rise is bad), so nothing slips through.
+- **It explains *why*** — each anomaly comes with What / Where / Why, e.g. *"NPU is only 11.7% of FPU → first-payments are mostly existing users, so net-new acquisition is the real constraint."*
+
+### 🎯 How it picks the segment to target
+1. **Rank by impact** — merchants sorted by MPU share; the biggest pools (Grab, XANH SM) get the first reactivation push.
+2. **Define the audience precisely** — *lapsed payer* = paid at this merchant **last month**, silent **this month**; *acquisition* = high-intent users with no Mobility payment yet.
+3. **Translate to a CRM segment** — app-id include/exclude, time window, estimated size, 1 promo/user — ready to drop into the tool.
+
 ## 🧭 Where the revenue is (the agent prioritizes automatically)
 
 ```mermaid
@@ -75,6 +88,12 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 | 🟡 XANH SM — Reactivation | win back lapsed riders | XANH SM mini-app |
 | 🟠 Be — Reactivation | win back lapsed riders | Be in Zalopay |
 
+**And it writes the copy, too** — each campaign ships with A/B push content + send time + the hypothesis being tested:
+> **A · Value** — *"Đặt xe tháng này — Zalopay giảm đến 50K"*
+> "Thanh toán Grab bằng Zalopay, chuyến này tiết kiệm đến 50K. Đặt xe thôi!" — send 11:30 SA
+> **B · Personalized** — *"{first_name}, tháng này chưa đặt xe?"* — send 6:00 CH
+> *Hypothesis: personal recall lifts open-rate on lapsed riders.*
+
 ## 🔒 Why you can trust it
 - **Every number is pulled live and audited** — if anything doesn't reconcile, the agent *refuses to send*. No made-up figures, ever.
 - **The agent never publishes on its own** — it proposes & drafts; a human reviews and activates.
@@ -89,6 +108,17 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 | posts the brief to Telegram + Confluence | review → `/confirm` → drafts in CRM |
 
 </div>
+
+## 🗺️ What's next
+Today the agent is dashboard-bound — it only claims what the dashboards can prove. As the data layer grows, so does the depth:
+
+| Phase | Upgrade | Unlocks |
+|-------|---------|---------|
+| **Now** | Dashboard-only analysis + draft CRM campaigns | MTD forecast, anomaly radar, per-merchant reactivation |
+| **Next — when ZDS dashboards support segment filters** | Split NPU / RPU / RSPU **by merchant**, per-merchant forecast | sharper targeting + budget allocation per merchant |
+| **Then** | **Toro-style auto-rollout** for large high-risk UID sets | safe staged rollout to big audiences |
+| **Then** | One-tap **live publish** (agent → CRM) once write-scope is granted | close the loop end-to-end |
+| **Later** | More channels (Zalo OA, in-app) + more verticals beyond Mobility | one analyst brain across the business |
 
 ---
 

@@ -46,6 +46,17 @@ sequenceDiagram
   Note over M,C: The agent proposes — the human always approves.
 ```
 
+## 🎥 See it in action
+
+**1️⃣ `/run` — one message, full analysis lands in Telegram**
+<img src="docs/step1-run.png" alt="/run — Growth Assistant posts the daily MTD brief in Telegram" width="100%"/>
+
+**2️⃣ `/confirm` — campaigns staged as DRAFT, with the exact content embedded**
+<img src="docs/step2-confirm.png" alt="/confirm — 4 push-noti drafts with title, body and deeplinks" width="100%"/>
+
+**3️⃣ Live in the Zalopay CRM — ready for a human to review & publish**
+<img src="docs/step3-crm.png" alt="The 4 notifications staged as DRAFT in the Zalopay CRM tool" width="100%"/>
+
 ## 📈 The impact
 
 <div align="center">

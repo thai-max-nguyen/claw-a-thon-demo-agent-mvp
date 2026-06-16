@@ -10,7 +10,7 @@
 ![Team](https://img.shields.io/badge/Team-Summer%20Lubu-0045FF?style=flat-square)
 ![Track](https://img.shields.io/badge/Track-Data%20Analysis-00B14F?style=flat-square)
 ![Built on](https://img.shields.io/badge/Powered%20by-GreenNode%20AgentBase-16a34a?style=flat-square)
-[![Endpoint live](https://img.shields.io/badge/endpoint-live%20%E2%9C%93-22c55e?style=flat-square)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/health)
+[![Endpoint live](https://img.shields.io/badge/endpoint-live%20%E2%9C%93%20·%20open%20dashboard-22c55e?style=flat-square)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)
 ![Model](https://img.shields.io/badge/model-gemma--4--31b--it-f59e0b?style=flat-square)
 
 [![Watch the 2-min demo](https://img.shields.io/badge/▶%20Watch%20the%202--min%20demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://vngms-my.sharepoint.com/:f:/g/personal/khailt_vng_com_vn/IgCTlgAV8wZbRqKThgshpnFaAYrSFh-8P-mibf8jWZVlnBM?e=q9X2Ca)
@@ -134,14 +134,16 @@ flowchart LR
 
 ## 🧭 Every merchant gets a campaign — momentum tells you where to lean in
 
-```mermaid
-pie showData title Mobility MPU share by merchant (illustrative)
-  "Grab" : 60
-  "XANH SM" : 24
-  "Be" : 13
-  "AhaMove" : 3
-```
-→ The agent builds a tailored campaign for **all four merchants** — and reads each one's momentum to tell you *where to lean in*: a **decelerating** merchant gets a stronger nudge, a healthy one a lighter touch. Grow every merchant, not just the big ones. *(shares illustrative; computed live.)*
+The agent builds a tailored campaign for **all four merchants** — then reads each one's **live momentum** to decide *where to lean in*. A slipping merchant gets a stronger nudge; a healthy one a lighter touch. **Grow every merchant, not just the big ones.**
+
+| Merchant | Momentum (live) | Campaign | Nudge strength |
+|----------|-----------------|----------|----------------|
+| 🟢 Grab | accelerating | Reactivation | lighter touch |
+| 🔵 XANH SM | steady | Reactivation | standard |
+| 🔴 Be | **decelerating** | Reactivation | **lean in — stronger** |
+| 🟡 AhaMove | steady | covered | standard |
+
+*→ Coverage is universal; intensity is data-driven. (momentum computed live from each merchant's monthly history — values illustrative.)*
 
 ## 🎬 From insight to action — campaigns ready to publish
 Four push-notification drafts with **real deeplinks + A/B copy**, staged in the CRM as **DRAFT** (you approve & publish — the agent never sends on its own):
@@ -200,7 +202,7 @@ Growth Assistant plugs into the tools the team already uses — each via its own
 cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
 ./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
 python3 telegram_bot.py      # start the /run + /confirm bot
-python3 -m pytest tests/     # 51 tests
+python3 -m pytest tests/     # 59 tests
 ```
 > 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
 
@@ -262,12 +264,12 @@ The bot **self-sources its own CRM session** (no manual token) and stages noti a
 | `crm_client.py` | Full-auto CRM staging — self-sources its own session |
 | `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
-| `tests/` | 51 tests · see `DEMO_SCRIPT.md` |
+| `tests/` | 59 tests · see `DEMO_SCRIPT.md` |
 
 ### Run
 ```bash
 ./run_mbs_growth.sh          # auto-login → pull → audit → post
-python3 -m pytest tests/     # 51 tests passing
+python3 -m pytest tests/     # 59 tests passing
 ```
 </details>
 

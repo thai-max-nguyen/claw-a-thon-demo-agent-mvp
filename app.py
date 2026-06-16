@@ -19,8 +19,8 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").rstrip("/")
@@ -71,6 +71,17 @@ _DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
  td{color:var(--navy)}.up{color:#0a9b4b;font-weight:700}.down{color:#d23a3a;font-weight:700}.flat{color:var(--mut)}
  .foot{margin-top:24px;color:var(--mut);font-size:12px;text-align:center}a{color:var(--blue);text-decoration:none;font-weight:600}
  .full{grid-column:1/-1}
+ .kpi{display:flex;flex-direction:column;gap:8px}
+ .kpi .lab{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);font-weight:700}
+ .kpi .big{font-size:34px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.5px}
+ .kpi .big small{font-size:17px;color:var(--mut);font-weight:700;margin-left:1px}
+ .kpi .row2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+ .delta{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+ .d-up{background:var(--mint);color:#0a9b4b}.d-dn{background:#ffecec;color:#d23a3a}.d-fl{background:#eef2fb;color:var(--mut)}
+ .chartwrap{flex:1;min-width:330px}
+ .chart-t{font-size:13.5px;font-weight:700;color:var(--navy)}
+ .lgd{display:inline-flex;gap:14px;font-size:11px;color:var(--mut);font-weight:600;margin:5px 0 4px}
+ .lgd i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body><div class="wrap">
  <div class="hero"><div class="row">
    <div><h1>Growth Assistant <span style="font-weight:600;opacity:.85">- Live Monitor</span></h1>
@@ -78,27 +89,52 @@ _DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
    <div class="pill"><span id="dot" class="dot"></span><span id="pill">checking...</span></div>
  </div></div>
  <div class="grid">
-   <div class="card full"><h3>&#128200; Business progress &amp; CRM effect &middot; this is what to watch daily &middot; illustrative</h3>
-     <div style="display:flex;gap:24px;flex-wrap:wrap">
-       <div style="flex:1;min-width:300px">
-         <div class="mut" style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--navy)">MPU vs target &mdash; last 6 months <span style="color:var(--green)">&#9650; on pace</span></div>
-         <svg viewBox="0 0 320 145" width="100%" height="150" preserveAspectRatio="none">
-           <line x1="8" y1="30" x2="312" y2="30" stroke="#0045FF" stroke-dasharray="5 4" stroke-width="1.5"/>
-           <text x="10" y="24" fill="#0045FF" font-size="10" font-weight="700">target</text>
-           <polyline fill="none" stroke="#00B14F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="20,112 78,100 136,88 194,72 252,54 300,42"/>
-           <circle cx="300" cy="42" r="4.5" fill="#00B14F"/>
-           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="20" y="136">M-5</text><text x="78" y="136">M-4</text><text x="136" y="136">M-3</text><text x="194" y="136">M-2</text><text x="252" y="136">M-1</text><text x="300" y="136">now</text></g>
+   <div class="card kpi"><div class="lab">MPU vs target &middot; MTD</div>
+     <div class="big">94<small>%</small></div>
+     <div class="row2"><span class="delta d-up">&#9650; on pace</span>
+       <svg width="80" height="26" viewBox="0 0 80 26"><polyline fill="none" stroke="#00B14F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="2,22 17,19 32,16 47,12 62,8 78,4"/></svg></div></div>
+   <div class="card kpi"><div class="lab">Forecast to month-end</div>
+     <div class="big">101<small>%</small></div>
+     <div class="row2"><span class="delta d-up">&#9650; will land above</span>
+       <svg width="80" height="26" viewBox="0 0 80 26"><polyline fill="none" stroke="#00B14F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="2,18 17,17 32,13 47,11 62,7 78,3"/></svg></div></div>
+   <div class="card kpi"><div class="lab">CRM reactivation lift</div>
+     <div class="big">+18<small>%</small></div>
+     <div class="row2"><span class="delta d-up">&#9650; vs baseline &middot; 6 wk</span>
+       <svg width="80" height="26" viewBox="0 0 80 26"><g fill="#00D95F"><rect x="2" y="20" width="9" height="6" rx="1.5"/><rect x="17" y="16" width="9" height="10" rx="1.5"/><rect x="32" y="13" width="9" height="13" rx="1.5"/><rect x="47" y="9" width="9" height="17" rx="1.5"/><rect x="62" y="5" width="9" height="21" rx="1.5"/><rect x="77" y="2" width="9" height="24" rx="1.5" transform="translate(-9,0)"/></g></svg></div></div>
+   <div class="card kpi"><div class="lab">Merchants on track</div>
+     <div class="big">3<small>/ 4</small></div>
+     <div class="row2"><span class="delta d-fl">Be decelerating &middot; lean in</span></div></div>
+   <div class="card full"><h3>&#128200; Progress over time &middot; watch this daily &middot; illustrative</h3>
+     <div style="display:flex;gap:30px;flex-wrap:wrap">
+       <div class="chartwrap">
+         <div class="chart-t">MPU vs target &mdash; last 6 months</div>
+         <div class="lgd"><span><i style="background:#00B14F"></i>Actual MPU (index)</span><span><i style="background:#0045FF"></i>Target = 100</span></div>
+         <svg viewBox="0 0 480 215" style="width:100%;height:auto">
+           <defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00B14F" stop-opacity=".22"/><stop offset="1" stop-color="#00B14F" stop-opacity="0"/></linearGradient></defs>
+           <g stroke="#e3e9f7" stroke-width="1"><line x1="55" y1="190" x2="462" y2="190"/><line x1="55" y1="133" x2="462" y2="133"/><line x1="55" y1="77" x2="462" y2="77"/><line x1="55" y1="20" x2="462" y2="20"/></g>
+           <g fill="#9aa7c4" font-size="10" text-anchor="end"><text x="48" y="193">80</text><text x="48" y="136">90</text><text x="48" y="80">100</text><text x="48" y="23">110</text></g>
+           <line x1="55" y1="77" x2="462" y2="77" stroke="#0045FF" stroke-width="1.5" stroke-dasharray="6 4"/>
+           <text x="460" y="72" fill="#0045FF" font-size="10" font-weight="700" text-anchor="end">Target 100</text>
+           <path d="M55,145 L135,133 L215,122 L295,105 L375,88 L455,71 L455,190 L55,190 Z" fill="url(#ar)"/>
+           <polyline fill="none" stroke="#00B14F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="55,145 135,133 215,122 295,105 375,88 455,71"/>
+           <g fill="#00B14F"><circle cx="55" cy="145" r="3.5"/><circle cx="135" cy="133" r="3.5"/><circle cx="215" cy="122" r="3.5"/><circle cx="295" cy="105" r="3.5"/><circle cx="375" cy="88" r="3.5"/><circle cx="455" cy="71" r="5"/></g>
+           <g fill="#0a9b4b" font-size="10" font-weight="700" text-anchor="middle"><text x="55" y="138">88</text><text x="135" y="126">90</text><text x="215" y="115">92</text><text x="295" y="98">95</text><text x="375" y="81">98</text><text x="455" y="62">101</text></g>
+           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="55" y="208">M-5</text><text x="135" y="208">M-4</text><text x="215" y="208">M-3</text><text x="295" y="208">M-2</text><text x="375" y="208">M-1</text><text x="455" y="208">now</text></g>
          </svg>
        </div>
-       <div style="flex:1;min-width:300px">
-         <div class="mut" style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--navy)">CRM reactivation lift &mdash; last 6 weeks <span style="color:var(--green)">&#9650; rising</span></div>
-         <svg viewBox="0 0 320 145" width="100%" height="150" preserveAspectRatio="none">
-           <g fill="#00D95F"><rect x="22" y="96" width="30" height="28" rx="4"/><rect x="70" y="86" width="30" height="38" rx="4"/><rect x="118" y="78" width="30" height="46" rx="4"/><rect x="166" y="64" width="30" height="60" rx="4"/><rect x="214" y="52" width="30" height="72" rx="4"/><rect x="262" y="40" width="30" height="84" rx="4"/></g>
-           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="37" y="138">W1</text><text x="85" y="138">W2</text><text x="133" y="138">W3</text><text x="181" y="138">W4</text><text x="229" y="138">W5</text><text x="277" y="138">W6</text></g>
+       <div class="chartwrap">
+         <div class="chart-t">CRM reactivation lift &mdash; last 6 weeks</div>
+         <div class="lgd"><span><i style="background:#00D95F"></i>Lift vs baseline (%)</span></div>
+         <svg viewBox="0 0 480 215" style="width:100%;height:auto">
+           <g stroke="#e3e9f7" stroke-width="1"><line x1="50" y1="190" x2="462" y2="190"/><line x1="50" y1="147" x2="462" y2="147"/><line x1="50" y1="105" x2="462" y2="105"/><line x1="50" y1="62" x2="462" y2="62"/><line x1="50" y1="20" x2="462" y2="20"/></g>
+           <g fill="#9aa7c4" font-size="10" text-anchor="end"><text x="44" y="193">0</text><text x="44" y="150">5</text><text x="44" y="108">10</text><text x="44" y="65">15</text><text x="44" y="23">20</text></g>
+           <g fill="#00D95F"><rect x="64" y="156" width="40" height="34" rx="5"/><rect x="132" y="130.5" width="40" height="59.5" rx="5"/><rect x="201" y="113.5" width="40" height="76.5" rx="5"/><rect x="269" y="88" width="40" height="102" rx="5"/><rect x="337" y="62.5" width="40" height="127.5" rx="5"/><rect x="406" y="37" width="40" height="153" rx="5"/></g>
+           <g fill="#0a9b4b" font-size="10" font-weight="700" text-anchor="middle"><text x="84" y="150">+4%</text><text x="152" y="124">+7%</text><text x="221" y="107">+9%</text><text x="289" y="82">+12%</text><text x="357" y="56">+15%</text><text x="426" y="31">+18%</text></g>
+           <g fill="#5b6b8c" font-size="10" text-anchor="middle"><text x="84" y="208">W1</text><text x="152" y="208">W2</text><text x="221" y="208">W3</text><text x="289" y="208">W4</text><text x="357" y="208">W5</text><text x="426" y="208">W6</text></g>
          </svg>
        </div>
      </div>
-     <div class="mut" style="font-size:12px;margin-top:8px">Daily glance: is MPU pacing to target, and are the staged CRM campaigns lifting reactivation? <i>(illustrative; the agent fills these from the live run)</i></div>
+     <div class="mut" style="font-size:12px;margin-top:10px">Daily glance: is MPU pacing to target, and are the staged CRM campaigns lifting reactivation week over week? <i>(illustrative; the agent fills these from the live run)</i></div>
    </div>
    <div class="card"><h3>Agent</h3>
      <div class="kv"><span class="mut">Name</span><b id="agent">...</b></div>
@@ -108,9 +144,9 @@ _DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
    </div>
    <div class="card"><h3>Daily run</h3>
      <div class="kv"><span class="mut">Schedule</span><b>10:00 &middot; launchd</b></div>
-     <div class="kv"><span class="mut">Last verdict</span><span class="badge b-amb">AT RISK</span></div>
-     <div class="kv"><span class="mut">MPU pacing</span><b>~95% of target</b></div>
-     <div class="kv"><span class="mut">Binding constraint</span><span class="badge b-pur">acquisition</span></div>
+     <div class="kv"><span class="mut">Last verdict</span><span class="badge b-grn">ON TRACK</span></div>
+     <div class="kv"><span class="mut">MPU pacing</span><b>~94% MTD &middot; 101% fc</b></div>
+     <div class="kv"><span class="mut">Lever to pull</span><span class="badge b-pur">acquisition</span></div>
    </div>
    <div class="card"><h3>Guardrails</h3>
      <div class="kv"><span class="mut">Audit gate</span><span class="badge b-grn">passing</span></div>
@@ -232,13 +268,18 @@ def health():
 
 
 @app.get("/")
-def root():
+def root(request: Request):
+    # A browser hitting the bare endpoint lands on the live dashboard (the thing worth seeing);
+    # API clients (fetch/curl/JSON) still get machine-readable metadata.
+    if "text/html" in request.headers.get("accept", ""):
+        return RedirectResponse("/dashboard")
     return {
         "agent": "Growth Assistant — Zalopay Mobility",
         "version": "1.0.0",
         "live_model": LLM_MODEL if LIVE else None,
         "mode": "live" if LIVE else "stub",
         "categories": CATEGORIES,
+        "dashboard": "/dashboard",
         "endpoints": ["/health", "/dashboard", "/question", "/chat", "/evaluate", "/session/{sid}"],
     }
 

@@ -37,6 +37,14 @@ def test_root_metadata():
     assert set(agentapp.CATEGORIES) == {"acquisition", "retention", "forecast", "anomaly"}
 
 
+def test_root_redirects_browser_to_dashboard():
+    # browser (Accept: text/html) -> dashboard; API client (JSON) -> metadata
+    r = client.get("/", headers={"accept": "text/html"}, follow_redirects=False)
+    assert r.status_code in (307, 308) and r.headers["location"] == "/dashboard"
+    j = client.get("/", headers={"accept": "application/json"}).json()
+    assert j["dashboard"] == "/dashboard" and j["agent"].startswith("Growth Assistant")
+
+
 def test_dashboard_serves_html():
     r = client.get("/dashboard")
     assert r.status_code == 200

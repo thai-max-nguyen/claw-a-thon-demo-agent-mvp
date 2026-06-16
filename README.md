@@ -46,5 +46,15 @@ Deployed as a GreenNode AgentBase Custom Agent (`app.py`): `GET /health` → `{"
 | `tests/` | 38 tests |
 | `DEMO_SCRIPT.md` · `SCOPE_crm_noti.md` · `DEPLOY_RUNBOOK.md` | Demo storyboard · CRM scope · deploy guide |
 
+## CRM realization (demonstrated)
+The Action Plan's 4 campaigns are pushed to the Zalopay CRM tool (Asset Management → Notification) as **DRAFT** notifications — real per-merchant deeplinks + A/B copy, ready for a human to review & publish. Draft-only by design; the agent never publishes.
+
+| Noti | Action | Deeplink |
+|------|--------|----------|
+| Reactivation · Grab | re-engage May payers absent in June | `zalopay://launch/app/2222` |
+| Acquisition · First Ride | net-new first-time riders (NPU constraint) | `zalopay://launch/app/2222` |
+| Reactivation · XANH SM | re-engage lapsed XANH SM payers | `zalopay://launch/app/1653?id=6944` |
+| Reactivation · Be | re-engage lapsed Be payers | `zalopay://launch/app/1341` |
+
 ## Notes
 No secrets in the repo — credentials are env-injected / gitignored. Brand spelled **Zalopay**. Built on **GreenNode AgentBase** (Custom Agent runtime + MaaS LLM).

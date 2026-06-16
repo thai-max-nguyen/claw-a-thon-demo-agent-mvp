@@ -128,6 +128,15 @@ Four push-notification drafts with **real deeplinks + A/B copy**, staged in the 
 
 </div>
 
+## 🟢 Powered by GreenNode
+Growth Assistant runs end-to-end on the **GreenNode AI Platform**:
+
+- **AgentBase** — the agent ships as a containerized **Custom Agent** runtime (`/health` + `/chat`), deployed straight from GreenNode's Container Registry.
+- **MaaS (Model-as-a-Service)** — one OpenAI-compatible endpoint to top models (**GPT · Gemini · Qwen**). The agent **pins the right model per task** — a fast model for generation, a reasoning model for scoring/analysis — instead of one-size-fits-all.
+- **Token-efficient by design** — the heavy lifting (metrics, pacing forecast, anomaly math) is deterministic Python over dashboard data, so **LLM tokens are spent only where they add value** (narrative + Q&A). Lower cost, faster replies — and an **audit gate** guarantees correctness no matter the model.
+
+> 🙏 **Thank you, GreenNode** — for the AgentBase + MaaS infrastructure and for powering Claw-a-thon 2026. 💚
+
 ## 🗺️ What's next
 Today the agent is dashboard-bound — it only claims what the dashboards can prove. As the data layer grows, so does the depth:
 

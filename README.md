@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/hero.png" alt="Growth Assistant — Zalopay Mobility · daily analytics → CRM actions" width="100%"/>
+
 # 🚀 Growth Assistant
 ### Your AI Growth Analyst for Zalopay Mobility
 

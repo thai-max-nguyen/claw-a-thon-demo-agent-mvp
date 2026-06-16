@@ -101,14 +101,19 @@ flowchart TD
   A --> W
 ```
 
+**It also *combines* the dashboards into signals none of them show on their own** (real, computed from the pulls — no fabrication):
+- **Per-merchant momentum + forecast** — the `YTM` monthly history → each merchant's MoM trend (accelerating / decelerating) and its own month-end projection, not just today's size.
+- **Funnel-leak diagnosis** — NPU → FPU → RPU ratios → pinpoints the binding stage (*acquisition vs retention*) so it picks the right lever.
+- **Spend efficiency** — Discount ÷ TPV + refund rate per merchant → avoid pushing budget where it bleeds.
+
 ### 🎯 How it picks the segment to target
 A 3-step funnel from "where's the money" to a ready CRM audience:
 
 ```mermaid
 flowchart LR
-  R["1️⃣ <b>Rank by impact</b><br/>merchants by MPU share<br/>Grab · XANH SM first"]
+  R["1️⃣ <b>Rank by impact + momentum</b><br/>merchants by MPU share<br/>decelerating merchants bumped up"]
   D["2️⃣ <b>Define the audience</b><br/>lapsed = paid last month, silent this month<br/>acquisition = high-intent non-payers"]
-  C["3️⃣ <b>Translate to a CRM segment</b><br/>app-id include/exclude · time window<br/>est. size · 1 promo/user"]
+  C["3️⃣ <b>Segment + tiered offer</b><br/>app-id include/exclude · window · est. size<br/>offer scaled to the gap (50K vs 30K)"]
   R --> D --> C
 ```
 

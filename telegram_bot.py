@@ -49,11 +49,14 @@ def run_e2e() -> dict:
     biz = g.pull_mbs_business(cookies)
     seg = g.pull_segments(cookies, biz["MPU"]["value"], biz["NPU"]["value"])
     merch = g.pull_merchant_mpu(cookies)
+    series = g.pull_merchant_series(cookies)
+    vol = g.pull_merchant_volume(cookies)
     fc = g.forecast(biz, cookies)
     fc["_target"] = g.MPU_TARGET.get(g._month_key())
     fc_reach = (fc.get("MPU_fc") / fc["_target"]) if (fc.get("MPU_fc") and fc.get("_target")) else None
     ok, _ = g.audit(biz, seg, merch)
-    actions = crm_noti.build_actions(biz, seg, merch, fc)
+    signals = g.derive_signals(biz, merch, series, vol, fc)
+    actions = crm_noti.build_actions(biz, seg, merch, fc, signals)
     report = g.build_report(biz, seg, merch, fc, actions)
     if ok:  # mirror to Confluence Daily Output (best-effort; never blocks the chat reply)
         try:

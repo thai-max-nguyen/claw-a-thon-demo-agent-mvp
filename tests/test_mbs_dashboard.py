@@ -111,6 +111,32 @@ def test_chunk_keeps_pre_intact():
     assert all(pre in c for c in chunks2 if "<pre>" in c)
 
 
+def test_derive_signals_momentum_leak_forecast():
+    biz = {"MPU": {"value": 548636}, "NPU": {"value": 3026}, "FPU": {"value": 25898},
+           "Transactions": {"value": 3046001}, "Refund": {"value": 328719}}
+    merch = {"Grab": 392315, "XANH SM": 156737, "Be": 84684, "AhaMove": 14480}
+    series = {"Grab": [392315, 410000, 420000], "XANH SM": [156737, 150000, 148000],
+              "Be": [84684, 84000, 83000], "AhaMove": [14480, 14000]}
+    vol = {"Grab": {"Cost/TPV": 0.07}}
+    fc = {"_target": 801000, "MPU_fc": 761524}
+    s = m.derive_signals(biz, merch, series, vol, fc)
+    g = s["merchants"]["Grab"]
+    assert g["momentum"] < 0 and g["trend"] == "decelerating"   # 392k after 410k,420k
+    assert g["forecast"] > g["mpu"]                              # pace > 1 applied per merchant
+    assert g["cost_tpv"] == 0.07
+    assert s["funnel"]["leak"] == "acquisition"                 # NPU 11.7% of FPU < 15%
+    assert s["gap"] > 0 and sum(x["gap_alloc"] for x in s["merchants"].values()) > 0
+    assert s["priority"][0] in ("Grab", "XANH SM")              # biggest pools lead
+
+
+def test_derive_signals_degrades_without_history():
+    biz = {"MPU": {"value": 500000}, "NPU": {"value": 3000}, "FPU": {"value": 25000},
+           "Transactions": {"value": 3000000}, "Refund": {"value": 300000}}
+    s = m.derive_signals(biz, {"Grab": 300000, "Be": 100000}, None, None, {"_target": 600000, "MPU_fc": 550000})
+    assert s["merchants"]["Grab"]["momentum"] is None           # no series -> graceful
+    assert s["funnel"]["leak"] in ("acquisition", "retention", "balanced")
+
+
 def test_kpi_target_present():
     assert m.MPU_TARGET["2026-06"] == 801000
 

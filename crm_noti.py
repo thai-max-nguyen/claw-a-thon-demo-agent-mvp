@@ -122,7 +122,7 @@ def _fmtk(n):
     return f"{n/1000:.0f}K" if abs(n) >= 1000 else str(n)
 
 
-def build_actions(biz, seg, merch, fc):
+def build_actions(biz, seg, merch, fc, signals=None):
     """Multiple prioritized action recommendations per Chị Nga's Step-D framework —
     one per lever/merchant, each grounded in real flagged data. Returns a list of
     action dicts (each carries its own CRM segment spec + targeted noti).
@@ -141,6 +141,12 @@ def build_actions(biz, seg, merch, fc):
     gap = round(tgt - fc_mpu) if (tgt and fc_mpu) else None
     lapsed_total = round(fc["prev_full"] - rpu) if fc.get("prev_full") else None
     merch_sum = sum(merch.values()) or 1
+    sig_m = (signals or {}).get("merchants", {})
+    sig_priority = (signals or {}).get("priority")
+    leak = (signals or {}).get("funnel", {}).get("leak")
+
+    def _offer(alloc):  # tier the incentive to the MPU gap this merchant must close
+        return "Giảm tự động đến 50K" if (alloc or 0) >= 20000 else "Giảm tự động đến 30K"
     actions = []
 
     # ---- A1: Acquisition (NPU flat is the structural constraint) ----
@@ -163,22 +169,29 @@ def build_actions(biz, seg, merch, fc):
         },
     })
 
-    # ---- A2..: Reactivation per merchant (lapsed payers, app-id specific) ----
-    reac = sorted(merch.items(), key=lambda kv: kv[1], reverse=True)  # biggest pool first
-    for i, (label, cur) in enumerate(reac):
-        if label == "AhaMove":
+    # ---- A2..: Reactivation per merchant — ordered by derived priority (share, with a
+    # bump for decelerating merchants), offers tiered to each merchant's gap allocation ----
+    order = sig_priority or [k for k, _ in sorted(merch.items(), key=lambda kv: kv[1], reverse=True)]
+    for label in order:
+        if label not in merch or label == "AhaMove":
             continue
+        cur = merch[label]
         est = round(lapsed_total * cur / merch_sum) if lapsed_total else None
         appid = APP_IDS.get(label, "")
+        m = sig_m.get(label, {})
+        mom, trend, fcast, alloc = m.get("momentum"), m.get("trend"), m.get("forecast"), m.get("gap_alloc")
+        mom_txt = f" · MoM {mom*100:+.1f}% ({trend})" if mom is not None else ""
+        alloc_txt = (f" Needs ≈{_fmtk(alloc)} MPU to close its share of the gap." if alloc else "")
+        decel = " It is also <b>decelerating</b> month-over-month, so the slip is structural, not noise." if trend == "decelerating" else ""
         actions.append({
             "priority": "P2", "type": "Reactivation", "merchant": label,
-            "problem": f"{label}: lapsed payers — paid in {prev_m} but no transaction in {cur_m} (≈{_fmtk(est) if est else '?'} users).",
+            "problem": f"{label}: lapsed payers — paid in {prev_m} but no transaction in {cur_m} (≈{_fmtk(est) if est else '?'} users){mom_txt}.",
             "cause": (f"H1: these users churned after last month's activity and aren't back this MTD; "
-                      f"{label} carries {cur*100//merch_sum}% of merchant MPU so re-engaging them moves MPU most. "
+                      f"{label} carries {cur*100//merch_sum}% of merchant MPU so re-engaging them moves MPU most.{decel}{alloc_txt} "
                       f"H2 (external): post-promo drop-off from {prev_m}."),
             "target": f"{label} users paid {prev_m}, not yet in {cur_m}",
             "channel": "Push + Zalo OA",
-            "promo": "Giảm tự động đến 50K",
+            "promo": _offer(alloc),
             "kpi": "Reactivation rate ≥ 15% · Cost/TPV ≤ 8%",
             "segment": {
                 "name": f"Noti_RPU_{label.replace(' ','')}_Churn_{today}",

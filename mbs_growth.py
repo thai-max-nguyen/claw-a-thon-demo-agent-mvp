@@ -219,6 +219,82 @@ def pull_merchant_mpu(cookies):
     return dict(zip(MERCH_ORDER, vals))
 
 
+def pull_merchant_series(cookies):
+    """Per-merchant MONTHLY MPU series from 'YTM' (the 13-value block per merchant
+    we already fetch but discard all-but-first). Index 0 = current month, 1 = prev, …
+    Returns {merchant: [m0, m1, …]} or {} if structure drifts (caller degrades)."""
+    try:
+        cols = _bootstrap_cols("RSTMonitoring", "MBSMonitoring", "YTM", cookies)
+        ints = next((c["dataValues"] for c in cols if c.get("dataType") == "integer"), [])
+        if len(ints) < (len(MERCH_ORDER) - 1) * YTM_STRIDE + YTM_STRIDE:
+            return {}
+        out = {}
+        for k, name in enumerate(MERCH_ORDER):
+            block = [v for v in ints[k * YTM_STRIDE:(k + 1) * YTM_STRIDE] if isinstance(v, (int, float))]
+            # keep the leading run of positive months (drop trailing zeros/padding)
+            series = []
+            for v in block:
+                if v <= 0:
+                    break
+                series.append(int(v))
+            if series:
+                out[name] = series
+        return out
+    except Exception as e:
+        print("  merchant series skipped:", str(e)[:50], flush=True)
+        return {}
+
+
+def derive_signals(biz, merch, series=None, vol=None, fc=None):
+    """Combine the dashboard pulls into NEW analytical signals — no fabrication, all
+    computed from real numbers. Drives smarter CRM targeting (which merchant, which
+    lever, how strong an offer). Every field degrades to None if its input is absent."""
+    mpu = biz["MPU"]["value"]; npu = biz["NPU"]["value"]; fpu = biz["FPU"]["value"]
+    rpu = mpu - fpu
+    series = series or {}; vol = vol or {}; fc = fc or {}
+    tgt = fc.get("_target"); fc_mpu = fc.get("MPU_fc")
+    pace = (fc_mpu / mpu) if (fc_mpu and mpu) else None        # MBS month-end scale-up factor
+    msum = sum(merch.values()) or 1
+    gap = round(tgt - fc_mpu) if (tgt and fc_mpu and fc_mpu < tgt) else 0
+
+    merchants = {}
+    for name, cur in merch.items():
+        s = series.get(name) or []
+        momentum = ((s[0] - s[1]) / s[1]) if len(s) >= 2 and s[1] else None      # MoM %
+        trend = None
+        if len(s) >= 3 and s[1] and s[2]:
+            prev_avg = (s[1] + s[2]) / 2
+            trend = "accelerating" if s[0] > s[1] > s[2] else "decelerating" if s[0] < prev_avg else "steady"
+        v = vol.get(name) or {}
+        merchants[name] = {
+            "mpu": cur, "share": cur / msum,
+            "momentum": momentum, "trend": trend,
+            "forecast": round(cur * pace) if pace else None,
+            "cost_tpv": v.get("Cost/TPV"),
+            "gap_alloc": round(gap * cur / msum) if gap else 0,
+        }
+
+    # funnel-leak: where is growth actually constrained?
+    npu_pct_fpu = npu / fpu if fpu else None
+    rpu_pct_mpu = rpu / mpu if mpu else None
+    leak = ("acquisition" if (npu_pct_fpu is not None and npu_pct_fpu < 0.15)
+            else "retention" if (rpu_pct_mpu is not None and rpu_pct_mpu > 0.9)
+            else "balanced")
+    rf = biz.get("Refund", {})
+    refund_rate = (rf.get("value") / biz["Transactions"]["value"]
+                   if rf.get("value") and biz.get("Transactions", {}).get("value") else None)
+    return {
+        "merchants": merchants,
+        "funnel": {"npu_pct_fpu": npu_pct_fpu, "rpu_pct_mpu": rpu_pct_mpu, "leak": leak},
+        "gap": gap, "refund_rate": refund_rate,
+        # priority order: biggest pools first, but a decelerating merchant is bumped up
+        "priority": [n for n, _ in sorted(
+            merchants.items(),
+            key=lambda kv: (kv[1]["share"] + (0.15 if kv[1]["trend"] == "decelerating" else 0)),
+            reverse=True)],
+    }
+
+
 def get_window(workbook, view, cookies):
     cols = None
     ch = (f"workgroup_session_id={cookies['workgroup_session_id']}; "
@@ -662,6 +738,8 @@ def main():
     print("pulling segments + merchant MPU...", flush=True)
     seg = pull_segments(cookies, biz["MPU"]["value"], biz["NPU"]["value"])
     merch = pull_merchant_mpu(cookies)
+    series = pull_merchant_series(cookies)          # per-merchant monthly history (for momentum)
+    vol = pull_merchant_volume(cookies)             # per-merchant Trans/TPV/Discount (for efficiency)
     fc = forecast(biz, cookies)
     print(f"  segments {seg} | merchants {merch}", flush=True)
     print(f"  forecast={fc}", flush=True)
@@ -675,9 +753,11 @@ def main():
     fc["_target"] = tgt
     fc_reach = (fc.get("MPU_fc") / tgt) if (fc.get("MPU_fc") and tgt) else None
     # multiple prioritized actions (acquisition + per-merchant reactivation), each w/ noti
+    signals = derive_signals(biz, merch, series, vol, fc)
+    print(f"  signals: leak={signals['funnel']['leak']} priority={signals['priority']}", flush=True)
     try:
         import crm_noti
-        actions = crm_noti.build_actions(biz, seg, merch, fc)
+        actions = crm_noti.build_actions(biz, seg, merch, fc, signals)
     except Exception as e:
         actions = []; print("  actions skipped:", str(e)[:60], flush=True)
     report = build_report(biz, seg, merch, fc, actions)

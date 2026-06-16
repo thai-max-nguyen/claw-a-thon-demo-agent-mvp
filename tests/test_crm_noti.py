@@ -106,6 +106,26 @@ def test_noti_label_rule():
     assert all(a["noti_name"].startswith("[MBS] ") for a in acts)
 
 
+def test_build_actions_uses_signals():
+    import mbs_growth as m
+    series = {"Grab": [392315, 420000, 430000], "XANH SM": [156737, 150000],
+              "Be": [84684, 83000], "AhaMove": [14480]}
+    sig = m.derive_signals(BIZ, MERCH, series, {}, FC)
+    acts = c.build_actions(BIZ, {}, MERCH, FC, sig)
+    grab = next(a for a in acts if a.get("merchant") == "Grab")
+    assert "MoM" in grab["problem"]                       # momentum surfaced in the diagnosis
+    assert "đến 50K" in grab["promo"] or "đến 30K" in grab["promo"]   # offer tiered by gap
+    # still produces the full set + no placeholder leak
+    assert len(acts) == 4
+    for a in acts:
+        assert "{merchant}" not in a["noti"]["variant_a"]["body"]
+
+
+def test_build_actions_no_signals_still_works():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)            # signals omitted -> backward compatible
+    assert len(acts) == 4 and acts[0]["type"] == "Acquisition"
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

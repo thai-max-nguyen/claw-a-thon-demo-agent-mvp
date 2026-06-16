@@ -1,61 +1,82 @@
-# Growth Assistant — Zalopay Mobility Services
+<div align="center">
 
-**Team:** Summer Lubu · **Track:** Data Analysis · GreenNode Claw-a-thon 2026
+# 🚀 Growth Assistant — Zalopay Mobility Services
 
-An AI agent that does a Growth Marketer's daily dashboard analysis for **Zalopay Mobility (MBS)** — automatically.
+**An AI growth analyst that turns 4 raw dashboards into a daily decision + ready-to-publish CRM campaigns — in under 20 minutes.**
 
-## Problem
-The Mobility Growth Marketer spends 2–3 hours every week manually tracking performance across **four disconnected Atlas dashboards** (MBS, Grab, Be, XANH SM), computing derived metrics, forecasting end-of-month numbers, and finding under-performing segments — before even getting to CRM push notifications.
+![Team](https://img.shields.io/badge/Team-Summer%20Lubu-7c3aed)
+![Track](https://img.shields.io/badge/Track-Data%20Analysis-2563eb)
+![Built on](https://img.shields.io/badge/Built%20on-GreenNode%20AgentBase%20%2B%20MaaS-16a34a)
+![Tests](https://img.shields.io/badge/tests-47%20passing-22c55e)
+![CRM](https://img.shields.io/badge/CRM-draft--only-f59e0b)
 
-## What it does (dashboard-only, no Excel)
-1. **Pulls MTD** live from the Atlas (Tableau) dashboards — MBS KPI tiles + `Monthly` / `YTM` / `MTD` worksheets.
-2. **Computes** derived metrics (FPU excl. NPU, RPU, retain rate) and a **full-month forecast** per segment (pacing = prev-month cumulative; confidence-gated).
-3. **Compares** current MTD vs last month (same elapsed days) and **flags anomalies** with a 4-tier rule set; segments behind KPI are marked **At Risk**.
-4. **Recommends actions** — per at-risk segment a 3W insight (What/Where/Why) + a prioritized campaign (P1 Acquisition + per-merchant P2 Reactivation).
-5. **Generates CRM assets** — a ready-to-use segment (`Noti_[Type]_[Merchant]_DD/MM`, app-id include/exclude, estimated size) + A/B push-notification copy (real per-merchant deeplinks, send times, hypotheses) to paste into the Zalopay CRM tool.
+</div>
 
-## Output & delivery
-- **Telegram group** — concise 5-section daily report.
-- **Confluence** — clean daily log (collapsible per-day, tables, panels, TOC) + the team PRD.
-- Sections: MTD Snapshot · Segment Health · Top Anomalies (3W) · Action Plan · CRM Ready + a one-line Bottom line.
+---
 
-## Value
-Weekly analysis time cut from **2–3 hours to under 20 minutes** — the team focuses on decisions, not data wrangling.
+## 🎯 The problem
+Zalopay Mobility's Growth Marketer spends **2–3 hours every week** manually stitching numbers across **4 disconnected Atlas dashboards** (MBS · Grab · Be · XANH SM) — computing metrics, forecasting the month, hunting under-performing segments — *before even touching* CRM push notifications.
 
-## How it runs
-- **Interactive (Telegram):** chat **`/run`** → the agent runs the full pipeline on demand (pull → forecast → anomalies → action plan) and posts an executive report; you review, then **`/confirm`** stages the proposed campaigns as **DRAFT** notifications in the CRM tool and replies with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). The bot **self-sources its own CRM session** (no manual token) and writes draft-only — you publish; the agent never publishes live.
-- Scheduled daily **10:00** (`launchd`) with **Atlas auto-login** (self-heals the SSO session).
-- An **audit gate** validates every number (segment sums, forecast bounds, cross-checks) and **aborts before sending** if anything fails — nothing fabricated.
-- **CRM is draft-only** — the agent proposes; a human reviews + publishes (confirm-gated).
+## 🤖 The agent
+Reads the dashboards directly (no Excel), forecasts the full month, flags anomalies, and returns a prioritized **action plan + the CRM assets to execute it** — draft-only, human-approved. The team spends time on decisions, not data wrangling.
 
-```bash
-./run_mbs_growth.sh          # auto-login + pull + audit + post (Telegram + Confluence)
-python3 mbs_growth.py --all  # same, without the SSO auto-login step
-python3 -m pytest tests/     # 38 tests
+## ⚙️ Two ways it runs
+| Mode | Trigger | What happens |
+|------|---------|--------------|
+| 🕙 **Daily** | `launchd` @ 10:00 (Atlas auto-login, self-heals SSO) | Full pipeline → posts the executive report to **Telegram + Confluence** daily log |
+| 💬 **On command** | Telegram `/run` → review → `/confirm` | Same pipeline on demand. `/confirm` stages the CRM noti as **DRAFT** — the bot **self-sources its own CRM session** (no manual token) and replies with the exact content embedded (title · body · deeplinks) |
+
+## 🔭 Pipeline
+```mermaid
+flowchart LR
+  A[4 Atlas dashboards] --> B[Pull MTD]
+  B --> C[Forecast · pacing]
+  C --> D[Anomalies · 4-tier]
+  D --> E[Action plan · P1 Acquisition + P2 Reactivation]
+  E --> F[CRM drafts · segment + A/B noti]
+  B --> G{Audit gate}
+  G -- fail --> X[Abort · never send]
+  G -- pass --> H[Telegram + Confluence]
+  F --> H
 ```
 
-## AgentBase endpoint (try the agent)
-Deployed as a GreenNode AgentBase Custom Agent (`app.py`): `GET /health` → `{"status":"ok"}`; `POST /chat {"message":"…"}` answers questions about the MBS growth analysis using GreenNode MaaS.
+## 📊 What it produces
+An **executive report**: `Verdict → MTD Snapshot → Segment Health → Top Anomalies (3W) → Action Plan → CRM-Ready`.
+> e.g. **MPU 548,636 → forecast 95.1% of target · 🟡 At Risk** — gap is acquisition (NPU flat); lever = re-engage lapsed payers.
 
-## Layout
-| File | Purpose |
+## 📥 CRM realization (live, draft-only)
+The action plan ships as **DRAFT** notifications in the Zalopay CRM tool — real per-merchant deeplinks + A/B copy, ready for a human to review & publish.
+
+| Campaign | Type | Deeplink |
+|----------|------|----------|
+| Grab | Reactivation | `zalopay://launch/app/2222` |
+| First Ride | Acquisition | `zalopay://launch/app/2222` |
+| XANH SM | Reactivation | `zalopay://launch/app/1653?id=6944` |
+| Be | Reactivation | `zalopay://launch/app/1341` |
+
+## 🛡️ Guardrails
+- **Audit gate** validates every number (segment sums, forecast bounds, cross-checks) and **aborts before sending** if anything fails — *nothing fabricated*.
+- **Draft-only** — the agent proposes & embeds content; a human publishes.
+- **No secrets in the repo** — credentials are env-injected / gitignored.
+
+## 🧱 Stack
+GreenNode **AgentBase** (Custom Agent · `app.py`) · **MaaS** LLM · FastAPI · Atlas (Tableau) VizQL · Telegram · Confluence.
+
+## 🗂️ Layout
+| Path | Purpose |
 |------|---------|
 | `mbs_growth.py` | Pipeline: pull → forecast → anomaly → report → deliver |
-| `crm_noti.py` | Action engine + CRM segment/noti generator (confirm-gated, draft-only) |
+| `crm_noti.py` | Action engine + CRM segment/noti generator (draft-only) |
+| `crm_client.py` | Full-auto CRM staging — self-sources its own session |
+| `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
 | `run_mbs_growth.sh` | Daily wrapper (Atlas auto-login + run) |
-| `tests/` | 38 tests |
-| `DEMO_SCRIPT.md` · `SCOPE_crm_noti.md` · `DEPLOY_RUNBOOK.md` | Demo storyboard · CRM scope · deploy guide |
+| `tests/` | 47 tests · `DEMO_SCRIPT.md` · `DEPLOY_RUNBOOK.md` |
 
-## CRM realization (demonstrated)
-The Action Plan's 4 campaigns are pushed to the Zalopay CRM tool (Asset Management → Notification) as **DRAFT** notifications — real per-merchant deeplinks + A/B copy, ready for a human to review & publish. Draft-only by design; the agent never publishes.
+## ▶️ Run
+```bash
+./run_mbs_growth.sh          # auto-login → pull → audit → post (Telegram + Confluence)
+python3 -m pytest tests/     # 47 tests
+```
 
-| Noti | Action | Deeplink |
-|------|--------|----------|
-| Reactivation · Grab | re-engage May payers absent in June | `zalopay://launch/app/2222` |
-| Acquisition · First Ride | net-new first-time riders (NPU constraint) | `zalopay://launch/app/2222` |
-| Reactivation · XANH SM | re-engage lapsed XANH SM payers | `zalopay://launch/app/1653?id=6944` |
-| Reactivation · Be | re-engage lapsed Be payers | `zalopay://launch/app/1341` |
-
-## Notes
-No secrets in the repo — credentials are env-injected / gitignored. Brand spelled **Zalopay**. Built on **GreenNode AgentBase** (Custom Agent runtime + MaaS LLM).
+<div align="center"><sub>Built on GreenNode AgentBase + MaaS · Brand spelled <b>Zalopay</b> · Team Summer Lubu</sub></div>

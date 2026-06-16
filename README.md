@@ -5,7 +5,7 @@
 # 🚀 Growth Assistant
 ### Your AI Growth Analyst for Zalopay Mobility
 
-*From 4 messy dashboards to a decision — and the campaigns to act on it — every morning, in under 20 minutes.*
+[![typing](https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=2800&pause=900&color=7C3AED&center=true&vCenter=true&width=820&lines=4+dashboards+-%3E+one+decision%2C+every+morning;2-3+hours+-%3E+under+20+minutes;Insight+-%3E+ready-to-send+CRM+campaigns;The+agent+proposes+-%3E+you+approve)](https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp)
 
 ![Team](https://img.shields.io/badge/Team-Summer%20Lubu-7c3aed?style=flat-square)
 ![Track](https://img.shields.io/badge/Track-Data%20Analysis-2563eb?style=flat-square)
@@ -201,3 +201,5 @@ python3 -m pytest tests/     # 47 tests passing
 <sub>Built on <b>GreenNode AgentBase + MaaS</b> · Brand spelled <b>Zalopay</b> · Team <b>Summer Lubu</b></sub>
 
 </div>
+
+![footer](https://capsule-render.vercel.app/api?type=waving&color=gradient&height=120&section=footer)

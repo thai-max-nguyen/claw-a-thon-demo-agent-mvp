@@ -6,7 +6,6 @@ Works in groups with privacy mode ON (it only sees /commands).
 Commands:
   /run      -> full daily analysis (pull → forecast → anomalies → action plan + CRM drafts)
   /confirm  -> stage the proposed noti as DRAFT in the CRM tool (you review, then publish)
-  /report   -> quick numbers-only report
   /help     -> usage
 
 Env (from .env): TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID. Token read from env ONLY.
@@ -22,7 +21,6 @@ HELP = (
     "🤖 <b>MBS Growth Assistant</b>\n"
     "/run — full daily analysis (pull → forecast → anomalies → action plan + CRM noti drafts)\n"
     "/confirm — stage the proposed noti as DRAFT in the CRM tool for your review\n"
-    "/report — quick numbers-only report\n"
     "/help — this message"
 )
 
@@ -109,10 +107,6 @@ def handle_text(text: str) -> str:
         blocks.append(f"\n👉 Review &amp; publish: {CRM_LINK}\n"
                       "<i>Draft-only — the agent proposes &amp; embeds the content; you review and activate.</i>")
         return "\n".join(blocks)
-    if cmd == "/report":
-        # quick numbers-only report (no action plan / CRM stage)
-        import mbs_report
-        return mbs_report.report_text(mbs_report.compute(mbs_report.load_rows()))
     return "Unknown command. Try /help"
 
 

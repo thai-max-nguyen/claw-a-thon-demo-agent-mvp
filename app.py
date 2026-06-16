@@ -20,6 +20,7 @@ import uuid
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").rstrip("/")
@@ -38,6 +39,101 @@ MODEL_EVALUATE = os.getenv("MODEL_EVALUATE", "").strip() or LLM_MODEL
 
 CATEGORIES = ["acquisition", "retention", "forecast", "anomaly"]
 MERCHANTS = ["Grab", "XANH SM", "Be", "all"]
+
+# Live monitoring dashboard (served at GET /dashboard). Agent health + model are polled
+# live from /health and /; the growth snapshot is ILLUSTRATIVE (real numbers stay internal).
+_DASHBOARD_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Growth Assistant - Live Monitor - Zalopay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+ :root{--blue:#0045FF;--green:#00D95F;--navy:#0A1F44;--ink:#16224a;--mut:#5b6b8c;--bg:#eef3ff;--card:#fff;--line:#e3e9f7;--mint:#e6fbee;--amb:#f59e0b;--red:#ef4444}
+ *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+ .wrap{max-width:1080px;margin:0 auto;padding:0 20px 60px}
+ .hero{background:linear-gradient(110deg,var(--blue),#0a2ddd 55%,var(--green));color:#fff;border-radius:0 0 22px 22px;padding:26px 26px 22px;margin:0 -20px 22px;box-shadow:0 12px 30px rgba(0,69,255,.18)}
+ .hero .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+ h1{font-size:24px;margin:0;font-weight:800;letter-spacing:.2px}
+ .hero .sub{opacity:.92;font-size:13px;margin-top:4px;font-weight:500}
+ .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;color:#fff}
+ .dot{width:9px;height:9px;border-radius:50%;background:#cbd6f5}.dot.ok{background:var(--green);box-shadow:0 0 0 0 rgba(0,217,95,.6);animation:pulse 2s infinite}.dot.bad{background:#ff8a8a}
+ @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,217,95,.5)}70%{box-shadow:0 0 0 8px rgba(0,217,95,0)}100%{box-shadow:0 0 0 0 rgba(0,217,95,0)}}
+ .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+ .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 6px 18px rgba(10,31,68,.05)}
+ .card h3{margin:0 0 12px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:700}
+ .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eef2fb;font-size:14px}.kv:last-child{border:0}
+ .kv b{font-weight:700;color:var(--navy)}.mut{color:var(--mut)}
+ .badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+ .b-grn{background:var(--mint);color:#0a9b4b}.b-amb{background:#fff6e6;color:#b9760a}.b-red{background:#ffecec;color:#d23a3a}.b-blu{background:#e7eeff;color:var(--blue)}.b-pur{background:#efe9ff;color:#6b3df0}
+ .flow{display:flex;gap:8px;flex-wrap:wrap}.step{flex:1;min-width:90px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;font-size:12px;color:var(--navy);font-weight:600}
+ .step .s{display:block;color:var(--green);font-weight:800;font-size:15px;margin-top:3px}
+ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+ td{color:var(--navy)}.up{color:#0a9b4b;font-weight:700}.down{color:#d23a3a;font-weight:700}.flat{color:var(--mut)}
+ .foot{margin-top:24px;color:var(--mut);font-size:12px;text-align:center}a{color:var(--blue);text-decoration:none;font-weight:600}
+ .full{grid-column:1/-1}
+</style></head><body><div class="wrap">
+ <div class="hero"><div class="row">
+   <div><h1>Growth Assistant <span style="font-weight:600;opacity:.85">- Live Monitor</span></h1>
+     <div class="sub">Zalopay Mobility &nbsp;|&nbsp; daily analytics &#8594; CRM actions &nbsp;|&nbsp; <span id="clock"></span></div></div>
+   <div class="pill"><span id="dot" class="dot"></span><span id="pill">checking...</span></div>
+ </div></div>
+ <div class="grid">
+   <div class="card"><h3>Agent</h3>
+     <div class="kv"><span class="mut">Name</span><b id="agent">...</b></div>
+     <div class="kv"><span class="mut">Model</span><b id="model">...</b></div>
+     <div class="kv"><span class="mut">Mode</span><b id="mode">...</b></div>
+     <div class="kv"><span class="mut">Endpoint</span><span id="hbadge" class="badge b-blu">...</span></div>
+   </div>
+   <div class="card"><h3>Daily run</h3>
+     <div class="kv"><span class="mut">Schedule</span><b>10:00 &middot; launchd</b></div>
+     <div class="kv"><span class="mut">Last verdict</span><span class="badge b-amb">AT RISK</span></div>
+     <div class="kv"><span class="mut">MPU pacing</span><b>~95% of target</b></div>
+     <div class="kv"><span class="mut">Binding constraint</span><span class="badge b-pur">acquisition</span></div>
+   </div>
+   <div class="card"><h3>Guardrails</h3>
+     <div class="kv"><span class="mut">Audit gate</span><span class="badge b-grn">passing</span></div>
+     <div class="kv"><span class="mut">Fabrication</span><span class="badge b-grn">none</span></div>
+     <div class="kv"><span class="mut">CRM writes</span><span class="badge b-amb">draft-only</span></div>
+     <div class="kv"><span class="mut">Secrets in repo</span><span class="badge b-grn">none</span></div>
+   </div>
+   <div class="card full"><h3>Pipeline</h3>
+     <div class="flow">
+       <div class="step">Pull MTD<span class="s">&#10003;</span></div>
+       <div class="step">Forecast<span class="s">&#10003;</span></div>
+       <div class="step">Anomalies<span class="s">&#10003;</span></div>
+       <div class="step">Action plan<span class="s">&#10003;</span></div>
+       <div class="step">CRM drafts<span class="s">&#10003;</span></div>
+     </div></div>
+   <div class="card full"><h3>Merchant momentum &middot; illustrative</h3>
+     <table><tr><th>Merchant</th><th>Share</th><th>Full-month trend</th><th>Projected vs last month</th><th>Lever</th></tr>
+       <tr><td>Grab</td><td>~60%</td><td class="up">accelerating</td><td class="up">+ slightly up</td><td>Reactivation</td></tr>
+       <tr><td>XANH SM</td><td>~24%</td><td class="flat">steady</td><td class="flat">flat</td><td>Reactivation</td></tr>
+       <tr><td>Be</td><td>~13%</td><td class="down">decelerating</td><td class="down">projected down</td><td>Reactivation (bumped)</td></tr>
+       <tr><td>AhaMove</td><td>~3%</td><td class="flat">steady</td><td class="flat">-</td><td>-</td></tr>
+     </table></div>
+   <div class="card full"><h3>CRM campaigns staged &middot; DRAFT (human publishes)</h3>
+     <table><tr><th>Campaign</th><th>Priority</th><th>Offer</th><th>Status</th></tr>
+       <tr><td>Acquisition &middot; First Ride</td><td>P1</td><td>auto -50K first ride</td><td><span class="badge b-amb">DRAFT</span></td></tr>
+       <tr><td>Reactivation &middot; Grab</td><td>P2</td><td>auto -50K</td><td><span class="badge b-amb">DRAFT</span></td></tr>
+       <tr><td>Reactivation &middot; XANH SM</td><td>P2</td><td>auto -30K</td><td><span class="badge b-amb">DRAFT</span></td></tr>
+       <tr><td>Reactivation &middot; Be</td><td>P2</td><td>auto -30K</td><td><span class="badge b-amb">DRAFT</span></td></tr>
+     </table></div>
+ </div>
+ <div class="foot">Built on GreenNode AgentBase + MaaS &middot; figures illustrative &middot; <a href="https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp">repo</a> &middot; auto-refreshes every 15s</div>
+</div>
+<script>
+ function clock(){document.getElementById('clock').textContent='updated '+new Date().toLocaleTimeString()}
+ async function info(){try{const d=await (await fetch('/')).json();
+   document.getElementById('agent').textContent=d.agent||'-';
+   document.getElementById('model').textContent=d.live_model||'(stub)';
+   document.getElementById('mode').textContent=d.mode||'-';}catch(e){}}
+ async function ping(){const dot=document.getElementById('dot'),p=document.getElementById('pill'),hb=document.getElementById('hbadge');
+   try{const r=await fetch('/health');const ok=r.ok&&(await r.json()).status==='ok';
+     dot.className='dot '+(ok?'ok':'bad');p.textContent=ok?'LIVE - healthy':'unreachable';
+     hb.textContent=ok?'200 OK':'down';hb.className='badge '+(ok?'b-grn':'b-red');}
+   catch(e){dot.className='dot bad';p.textContent='unreachable';hb.textContent='down';hb.className='badge b-red'}clock()}
+ info();ping();setInterval(ping,15000);
+</script></body></html>"""
 
 app = FastAPI(
     title="Growth Assistant — Zalopay Mobility",
@@ -121,8 +217,15 @@ def root():
         "live_model": LLM_MODEL if LIVE else None,
         "mode": "live" if LIVE else "stub",
         "categories": CATEGORIES,
-        "endpoints": ["/health", "/question", "/chat", "/evaluate", "/session/{sid}"],
+        "endpoints": ["/health", "/dashboard", "/question", "/chat", "/evaluate", "/session/{sid}"],
     }
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """Live monitoring dashboard — agent health/model (live, polled) + an illustrative
+    snapshot of the daily growth pipeline. Self-contained HTML; figures are illustrative."""
+    return _DASHBOARD_HTML
 
 
 @app.post("/question")

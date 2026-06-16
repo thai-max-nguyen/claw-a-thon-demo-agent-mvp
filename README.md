@@ -22,6 +22,9 @@
 ---
 
 ## 💔 The 3-hour Monday problem
+
+<img src="docs/monday-problem.png" alt="A stressed marketer copy-pasting across MBS/Grab/Be/XANH SM dashboards — 'please setup faster', half the day gone" width="100%"/>
+
 Every week, Zalopay Mobility's Growth Marketer burns **2–3 hours** copy-pasting numbers across **4 separate dashboards** (MBS · Grab · Be · XANH SM) just to answer one question:
 > *"Are we on track this month — and what do we do about it?"*
 

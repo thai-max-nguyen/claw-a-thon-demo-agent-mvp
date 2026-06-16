@@ -37,6 +37,18 @@ def test_root_metadata():
     assert set(agentapp.CATEGORIES) == {"acquisition", "retention", "forecast", "anomaly"}
 
 
+def test_dashboard_serves_html():
+    r = client.get("/dashboard")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    b = r.text
+    assert "Growth Assistant" in b and "Live Monitor" in b
+    assert "/health" in b and "fetch('/')" in b          # live health/model polling wired
+    assert "illustrative" in b.lower()                   # snapshot labeled illustrative
+    assert "DRAFT" in b                                  # CRM campaigns panel present
+    assert "#0045FF" in b and "#00D95F" in b             # Zalopay brand colors
+
+
 def test_question_real():
     d = client.post("/question", json={"category": "retention", "merchant": "Grab"}).json()
     assert d["category"] == "retention"

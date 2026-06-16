@@ -10,7 +10,8 @@
 ![Team](https://img.shields.io/badge/Team-Summer%20Lubu-7c3aed?style=flat-square)
 ![Track](https://img.shields.io/badge/Track-Data%20Analysis-2563eb?style=flat-square)
 ![Built on](https://img.shields.io/badge/Powered%20by-GreenNode%20AgentBase-16a34a?style=flat-square)
-![Status](https://img.shields.io/badge/status-live-22c55e?style=flat-square)
+[![Endpoint live](https://img.shields.io/badge/endpoint-live%20%E2%9C%93-22c55e?style=flat-square)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/health)
+![Model](https://img.shields.io/badge/model-gemma--4--31b--it-f59e0b?style=flat-square)
 
 [![Watch the 2-min demo](https://img.shields.io/badge/▶%20Watch%20the%202--min%20demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://vngms-my.sharepoint.com/:f:/g/personal/khailt_vng_com_vn/IgCTlgAV8wZbRqKThgshpnFaAYrSFh-8P-mibf8jWZVlnBM?e=q9X2Ca)
 

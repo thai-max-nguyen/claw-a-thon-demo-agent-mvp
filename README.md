@@ -23,6 +23,7 @@ The Mobility Growth Marketer spends 2–3 hours every week manually tracking per
 Weekly analysis time cut from **2–3 hours to under 20 minutes** — the team focuses on decisions, not data wrangling.
 
 ## How it runs
+- **Interactive (Telegram):** chat **`/run`** → the agent runs the full pipeline on demand (pull → forecast → anomalies → action plan) and posts an executive report; you review, then **`/confirm`** stages the proposed campaigns as **DRAFT** notifications in the CRM tool and replies with the exact content embedded in each (title, body, ZPA/ZPI deeplinks). The bot **self-sources its own CRM session** (no manual token) and writes draft-only — you publish; the agent never publishes live.
 - Scheduled daily **10:00** (`launchd`) with **Atlas auto-login** (self-heals the SSO session).
 - An **audit gate** validates every number (segment sums, forecast bounds, cross-checks) and **aborts before sending** if anything fails — nothing fabricated.
 - **CRM is draft-only** — the agent proposes; a human reviews + publishes (confirm-gated).
@@ -45,6 +46,16 @@ Deployed as a GreenNode AgentBase Custom Agent (`app.py`): `GET /health` → `{"
 | `run_mbs_growth.sh` | Daily wrapper (Atlas auto-login + run) |
 | `tests/` | 38 tests |
 | `DEMO_SCRIPT.md` · `SCOPE_crm_noti.md` · `DEPLOY_RUNBOOK.md` | Demo storyboard · CRM scope · deploy guide |
+
+## CRM realization (demonstrated)
+The Action Plan's 4 campaigns are pushed to the Zalopay CRM tool (Asset Management → Notification) as **DRAFT** notifications — real per-merchant deeplinks + A/B copy, ready for a human to review & publish. Draft-only by design; the agent never publishes.
+
+| Noti | Action | Deeplink |
+|------|--------|----------|
+| Reactivation · Grab | re-engage May payers absent in June | `zalopay://launch/app/2222` |
+| Acquisition · First Ride | net-new first-time riders (NPU constraint) | `zalopay://launch/app/2222` |
+| Reactivation · XANH SM | re-engage lapsed XANH SM payers | `zalopay://launch/app/1653?id=6944` |
+| Reactivation · Be | re-engage lapsed Be payers | `zalopay://launch/app/1341` |
 
 ## Notes
 No secrets in the repo — credentials are env-injected / gitignored. Brand spelled **Zalopay**. Built on **GreenNode AgentBase** (Custom Agent runtime + MaaS LLM).

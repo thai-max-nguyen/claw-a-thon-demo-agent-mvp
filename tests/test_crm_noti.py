@@ -79,6 +79,33 @@ def test_acquisition_deeplink_is_per_merchant_note():
     assert "see deeplink table" in n["zpa_redirection"]
 
 
+def test_no_placeholder_leaks_in_any_action():
+    # every action's noti copy must be fully rendered — no literal {merchant} shipped,
+    # including the cross-merchant Acquisition action (which has no merchant).
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    for a in acts:
+        for var in ("variant_a", "variant_b"):
+            for fld in ("title", "body"):
+                assert "{merchant}" not in a["noti"][var][fld], f"{a.get('type')}/{var}/{fld} leaked {{merchant}}"
+
+
+def test_acquisition_noti_has_no_merchant_placeholder():
+    n = c.build_noti_content({"type": "Acquisition"})       # no merchant
+    assert "{merchant}" not in n["variant_a"]["body"]
+    assert "{merchant}" not in n["variant_b"]["body"]
+
+
+def test_noti_label_rule():
+    # rule: "[MBS] <Merchant> <segment name>"; cross-merchant Acquisition -> "Mobility"
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    by = {a.get("merchant"): a for a in acts}
+    assert by["Grab"]["noti_name"] == "[MBS] Grab " + by["Grab"]["segment"]["name"]
+    assert by["XANH SM"]["noti_name"] == "[MBS] XANH SM " + by["XANH SM"]["segment"]["name"]
+    acq = next(a for a in acts if a["type"] == "Acquisition")
+    assert acq["noti_name"].startswith("[MBS] Mobility ")
+    assert all(a["noti_name"].startswith("[MBS] ") for a in acts)
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

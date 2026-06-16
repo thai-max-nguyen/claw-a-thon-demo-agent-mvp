@@ -16,3 +16,6 @@ build/
 .tg_group_id
 crm_noti_audit.jsonl
 *.xlsx
+.claude/
+greennode-agentbase-skills/
+deploy.env

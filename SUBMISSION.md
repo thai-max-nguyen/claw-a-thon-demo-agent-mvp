@@ -16,10 +16,10 @@
 - Nguyễn Lê Quang Thái — ThaiNLQ@vng.com.vn
 
 ## 4 required artifacts
-1. **Agent ACTIVE on AgentBase** — ⛔ BLOCKED: runtime stuck CREATING→ERROR (platform-side; container proven healthy locally). See SUPPORT_greennode.md.
-2. **Public GitHub repo + README** — ✅ README done (no secrets). Repo URL: __________ (fill)
-3. **Demo video <3 min** — ⏳ record per DEMO_SCRIPT.md → YouTube unlisted / OneDrive shared to @vng.com.vn. Link: __________
-4. **Live endpoint (responds in incognito)** — ⛔ depends on #1 (AgentBase endpoint). URL: __________
+1. **Agent ACTIVE on AgentBase** — ✅ **ACTIVE**. Runtime `growth-assistant` (`runtime-8437757a`), model `google/gemma-4-31b-it`. Deployed via the official GreenNode AgentBase skill (IAM auth + `--from-cr`).
+2. **Public GitHub repo + README** — ✅ public, polished README. Repo: https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp
+3. **Demo video <3 min** — ✅ SharePoint (shared to @vng.com.vn): https://vngms-my.sharepoint.com/:f:/g/personal/khailt_vng_com_vn/IgCTlgAV8wZbRqKThgshpnFaAYrSFh-8P-mibf8jWZVlnBM?e=q9X2Ca
+4. **Live endpoint (responds in incognito)** — ✅ `/health` → `{"status":"ok"}` 200: https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn
 
 ## CRM realization (demonstrated, draft-only)
 4 DRAFT notifications created in the Zalopay CRM tool, mapped 1:1 to the agent's Action Plan (verified `INACTIVE`):

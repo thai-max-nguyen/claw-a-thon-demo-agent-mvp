@@ -145,6 +145,7 @@ Growth Assistant runs end-to-end on the **GreenNode AI Platform**:
 - **AgentBase** — the agent ships as a containerized **Custom Agent** runtime (`/health` + `/chat`), deployed straight from GreenNode's Container Registry.
 - **MaaS (Model-as-a-Service)** — one OpenAI-compatible endpoint to top models (**GPT · Gemini · Qwen**). The agent **pins the right model per task** — a fast model for generation, a reasoning model for scoring/analysis — instead of one-size-fits-all.
 - **Token-efficient by design** — the heavy lifting (metrics, pacing forecast, anomaly math) is deterministic Python over dashboard data, so **LLM tokens are spent only where they add value** (narrative + Q&A). Lower cost, faster replies — and an **audit gate** guarantees correctness no matter the model.
+- **Live now** — deployed as an AgentBase Custom Agent running **`google/gemma-4-31b-it`** (a GreenNode-enabled model, chosen for token efficiency + strong Vietnamese output). Public endpoint, `/health` → `200`.
 
 > 🙏 **Thank you, GreenNode** — for the AgentBase + MaaS infrastructure and for powering Claw-a-thon 2026. 💚
 

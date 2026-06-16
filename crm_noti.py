@@ -1,5 +1,17 @@
 """Confirm-gated CRM notification setup for the Growth Assistant.
 
+Tactics (adapted from the ai-growth-prompts growth-marketing playbook):
+  * Campaign level S — owned channels only (in-app + push), self-contained vouchers,
+    1 promo/user; no paid reach assumed.
+  * Risk-tiered intervention — churn risk from full-month momentum sets the
+    INTENSITY (trigger timing + urgency), not the discount size (over-discounting
+    cannibalizes margin). Discount stays tiered to the MPU gap.
+  * Habit window — loyalty forms at the 2nd transaction; re-engage lapsed users
+    inside the D1–D30 window before the lapse hardens into churn.
+  * Cannibalization guard — every segment excludes users already active this month,
+    so budget never subsidizes payers who'd have transacted anyway.
+  * Measurement — each action carries D7/D14 success metrics, not just a one-shot KPI.
+
 SOP (per the Business Owner's doc):
   1. Build an Action-Recommendation proposal from the daily growth data.
   2. Post a DRY-RUN preview to the Telegram group (segment name, conditions, app-ids,
@@ -147,6 +159,18 @@ def build_actions(biz, seg, merch, fc, signals=None):
 
     def _offer(alloc):  # tier the incentive to the MPU gap this merchant must close
         return "Giảm tự động đến 50K" if (alloc or 0) >= 20000 else "Giảm tự động đến 30K"
+
+    def _risk(trend):
+        # churn-risk tier from full-month momentum (growth-tactics: risk-tiered intervention —
+        # higher risk earns a more direct intervention, NOT a bigger discount, to avoid
+        # over-spend / cannibalization). decelerating = slip is structural = act now.
+        return {"decelerating": "high", "accelerating": "low"}.get(trend, "medium")
+
+    # Intervention intensity by risk tier (timing + urgency), per the segment-analysis
+    # "intervene per risk tier" pattern. Discount stays gap-tiered (see _offer).
+    _TRIGGER = {"high":   "D1–D3 after lapse · push (owned) · 1/user · 48h urgency window",
+                "medium": "D1–D7 after lapse · push (owned) · 1/user",
+                "low":    "D3–D7 after lapse · push (owned) · 1/user · lighter touch"}
     actions = []
 
     # ---- A1: Acquisition (NPU flat is the structural constraint) ----
@@ -160,7 +184,11 @@ def build_actions(biz, seg, merch, fc, signals=None):
         "target": "High-intent non-payers in Mobility (installed / browsed ride use-cases, no Mobility payment yet)",
         "channel": "Push + Zalo OA",
         "promo": "Giảm tự động đến 50K cho chuyến đầu",
+        "level": "S · in-app + push (owned) · self-contained voucher (no paid reach)",
+        "trigger": "On first Mobility intent (opened/browsed ride) · push within 24h · 1/user",
         "kpi": "New MPU (NPU) ≥ +20% WoW · first-payment conversion ≥ 8%",
+        "measure": "D7 first-payment conversion · D14 second-payment (habit forms at the 2nd ride, not the 1st)",
+        "guard": "Exclusion = any lifetime Mobility payment → only true net-new (no cannibalizing existing payers).",
         "segment": {
             "name": f"Noti_NPU_MBS_Acq_{today}",
             "conditions": (f"App ID 222/1063/3095 · Inclusion: opened Mobility in {cur_m} · "
@@ -180,19 +208,25 @@ def build_actions(biz, seg, merch, fc, signals=None):
         appid = APP_IDS.get(label, "")
         m = sig_m.get(label, {})
         proj, trend, fcast, alloc = m.get("proj_mom"), m.get("trend"), m.get("forecast"), m.get("gap_alloc")
+        risk = _risk(trend)
         mom_txt = f" · projected {proj*100:+.1f}% vs last full month" if proj is not None else ""
         alloc_txt = (f" Needs ≈{_fmtk(alloc)} MPU to close its share of the gap." if alloc else "")
-        decel = " It is <b>decelerating</b> on the full-month trend, so the slip is structural, not noise." if trend == "decelerating" else ""
+        decel = " It is <b>decelerating</b> on the full-month trend, so the slip is structural, not noise — intervene now." if trend == "decelerating" else ""
         actions.append({
-            "priority": "P2", "type": "Reactivation", "merchant": label,
+            "priority": "P2", "type": "Reactivation", "merchant": label, "risk": risk,
             "problem": f"{label}: lapsed payers — paid in {prev_m} but no transaction in {cur_m} (≈{_fmtk(est) if est else '?'} users){mom_txt}.",
             "cause": (f"H1: these users churned after last month's activity and aren't back this MTD; "
                       f"{label} carries {cur*100//merch_sum}% of merchant MPU so re-engaging them moves MPU most.{decel}{alloc_txt} "
+                      f"Loyalty forms at the 2nd ride, not the 1st — re-engage inside the D1–D30 habit window before the lapse hardens into churn. "
                       f"H2 (external): post-promo drop-off from {prev_m}."),
             "target": f"{label} users paid {prev_m}, not yet in {cur_m}",
             "channel": "Push + Zalo OA",
             "promo": _offer(alloc),
-            "kpi": "Reactivation rate ≥ 15% · Cost/TPV ≤ 8%",
+            "level": "S · in-app + push (owned) · self-contained voucher",
+            "trigger": _TRIGGER[risk],
+            "kpi": "Reactivation rate ≥ 15% · Cost/TPV ≤ 8%" + (" · high-risk: tighten to 48h" if risk == "high" else ""),
+            "measure": "D7 reactivation rate · D14 second-ride (habit) rate · Cost/TPV ≤ 8%",
+            "guard": f"Exclusion = paid {label} this month → never nudge already-active users (no cannibalization, no margin bleed).",
             "segment": {
                 "name": f"Noti_RPU_{label.replace(' ','')}_Churn_{today}",
                 "conditions": (f"App ID {appid} · Inclusion: Zalopay txn at {label} in {prev_m} · "

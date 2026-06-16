@@ -515,7 +515,11 @@ def build_report(biz, seg, merch, fc=None, actions=None):
         L.append(f"   • <b>Problem</b> — {a['problem']}")
         L.append(f"   • <b>Target</b> — {a['target']}")
         L.append(f"   • <b>Campaign</b> — {a['channel']} · {a['promo']}")
+        if a.get("trigger"):
+            L.append(f"   • <b>Trigger</b> — {a['trigger']}" + (f" · risk: <b>{a['risk']}</b>" if a.get("risk") else ""))
         L.append(f"   • <b>KPI</b> — {a['kpi']}")
+        if a.get("measure"):
+            L.append(f"   • <b>Measure</b> — {a['measure']}")
         L.append("")
     # ---- 5 · CRM-ready ----
     L.append("📥 <b>CRM-READY</b>   <i>segments · draft</i>")

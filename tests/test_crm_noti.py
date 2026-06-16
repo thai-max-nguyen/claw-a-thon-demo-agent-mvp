@@ -162,6 +162,40 @@ def test_offer_tiers_to_gap():
     assert tier(by["Grab"]["promo"]) > tier(by["Be"]["promo"])             # bigger gap → stronger offer
 
 
+# ---- growth-tactics enhancements (adapted from ai-growth-prompts) ----
+def test_risk_tier_from_momentum():
+    import mbs_growth as m
+    sig = m.derive_signals(BIZ, MERCH, SERIES, {}, FC)
+    by = {a.get("merchant"): a for a in c.build_actions(BIZ, {}, MERCH, FC, sig)}
+    assert by["Be"]["risk"] == "high"        # decelerating full-month trend → high churn risk
+    assert by["Grab"]["risk"] == "low"       # accelerating → low risk
+
+
+def test_risk_sets_intensity_not_discount():
+    # cannibalization-safe: high risk earns a FASTER trigger, not a bigger discount.
+    import mbs_growth as m
+    sig = m.derive_signals(BIZ, MERCH, SERIES, {}, FC)
+    by = {a.get("merchant"): a for a in c.build_actions(BIZ, {}, MERCH, FC, sig)}
+    assert "30K" in by["Be"]["promo"]                       # discount stays gap-tiered (small gap → 30K)
+    assert "48h" in by["Be"]["trigger"]                     # high-risk → urgency window
+    assert "lighter touch" in by["Grab"]["trigger"]         # low-risk → lighter touch
+
+
+def test_habit_window_and_measurement_present():
+    acts = c.build_actions(BIZ, {}, MERCH, FC)
+    rea = next(a for a in acts if a.get("type") == "Reactivation")
+    assert "2nd" in rea["cause"] and "D1–D30" in rea["cause"]   # habit-window framing
+    assert "D7" in rea["measure"] and "D14" in rea["measure"]   # day-7 / day-14 measurement
+    acq = next(a for a in acts if a["type"] == "Acquisition")
+    assert "D7" in acq["measure"] and "D14" in acq["measure"]
+
+
+def test_cannibalization_guard_on_every_action():
+    for a in c.build_actions(BIZ, {}, MERCH, FC):
+        assert "annibaliz" in a["guard"]                       # explicit no-cannibalization guard
+        assert a["level"].startswith("S")                      # campaign level S (owned channels)
+
+
 def test_fmtk():
     assert c._fmtk(129300) == "129K"
     assert c._fmtk(950) == "950"

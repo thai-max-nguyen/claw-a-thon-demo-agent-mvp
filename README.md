@@ -148,6 +148,12 @@ The agent builds a tailored campaign for **all four merchants** — then reads e
 *→ Coverage is universal; intensity is data-driven. (momentum computed live from each merchant's monthly history — values illustrative.)*
 
 ## 🎬 From insight to action — campaigns ready to publish
+The campaigns aren't generic blasts — they follow a **growth-marketing playbook**:
+- **Risk-tiered intervention** — a *decelerating* merchant gets a faster, more urgent trigger (D1–D3, 48h window); a healthy one a lighter touch. **Risk sets the urgency, not the discount** — the offer stays tiered to the MPU gap, so budget never inflates where it isn't needed.
+- **Habit window** — loyalty forms at the **2nd** ride, not the 1st, so lapsed riders are re-engaged inside the **D1–D30** window before the lapse hardens into churn.
+- **Cannibalization guard** — every segment **excludes users already active this month**, so spend never subsidizes payers who'd have transacted anyway.
+- **Measured at D7 & D14** — each campaign carries day-7 / day-14 success metrics, not a one-shot KPI.
+
 Four push-notification drafts with **real deeplinks + A/B copy**, staged in the CRM as **DRAFT** (you approve & publish — the agent never sends on its own):
 
 | Campaign | Goal | One-tap opens |
@@ -211,7 +217,7 @@ Growth Assistant plugs into the tools the team already uses — each via its own
 cp .env.example .env         # fill: LLM_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
 ./run_mbs_growth.sh          # Atlas auto-login → pull → audit → post (Telegram + Confluence)
 python3 telegram_bot.py      # start the /run + /confirm bot
-python3 -m pytest tests/     # 56 tests
+python3 -m pytest tests/     # 60 tests
 ```
 > 🔐 **No secret is ever committed** — every credential is env-injected or read in-memory; `.env`, tokens, and registry creds are gitignored. `.env.example` is the tracked template.
 
@@ -273,12 +279,12 @@ The bot **self-sources its own CRM session** (no manual token) and stages noti a
 | `crm_client.py` | Full-auto CRM staging — self-sources its own session |
 | `telegram_bot.py` | `/run` + `/confirm` bridge (HTML, chunked) |
 | `app.py` | FastAPI endpoint agent (AgentBase Custom Agent) |
-| `tests/` | 56 tests · see `DEMO_SCRIPT.md` |
+| `tests/` | 60 tests · see `DEMO_SCRIPT.md` |
 
 ### Run
 ```bash
 ./run_mbs_growth.sh          # auto-login → pull → audit → post
-python3 -m pytest tests/     # 56 tests passing
+python3 -m pytest tests/     # 60 tests passing
 ```
 </details>
 

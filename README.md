@@ -60,13 +60,7 @@ The brief lands in the team chat **and** on a Confluence page anyone can read �
 ### 💬 Active · on demand — adjust, then confirm
 When you're ready to act, drive it from Telegram (or a terminal): ask for the latest with **`/run`**, **tune the plan in plain language** with **`/adjust`** until it's right, then **`/confirm`** — it stages the **latest** version as **DRAFT** in the CRM. The agent proposes; you always approve.
 
-```mermaid
-flowchart LR
-  R["1 · run<br/>pull · analyse · propose"] --> J["2 · adjust<br/>tune offer · drop merchant"]
-  J --> J
-  J --> K["3 · confirm<br/>stage the LATEST as DRAFT"]
-  K --> P["you review and publish"]
-```
+**The loop:** &nbsp; **`/run`** &nbsp;→&nbsp; review &nbsp;→&nbsp; **`/adjust`** *(repeat as needed)* &nbsp;↺&nbsp;→&nbsp; **`/confirm`** &nbsp;→&nbsp; stages the **latest** as **DRAFT** &nbsp;→&nbsp; you publish.
 
 > 💡 **Why `/adjust` matters:** `/confirm` always stages the **latest tuned plan**, never the raw pull — so your feedback (a smaller offer, a dropped merchant, a sharper focus) is exactly what lands in the CRM. `/adjust Grab 30K, drop Be` retiers Grab's offer and removes Be in one line.
 
@@ -237,14 +231,7 @@ Today the agent is dashboard-bound — it only claims what the dashboards can pr
 <summary><b>🔧 Under the hood</b> — for the engineers (click to expand)</summary>
 
 ### How it thinks
-```mermaid
-flowchart LR
-  A["4 Atlas dashboards"] --> B["Pull MTD"]
-  B --> C["Forecast · anomalies · audit gate"]
-  C --> E["Action plan<br/>P1 Acquisition · P2 Reactivation"]
-  E --> S["Passive · suggest<br/>Telegram · Confluence · dashboard"]
-  S --> K["Active · on confirm<br/>stage DRAFT in CRM"]
-```
+`4 Atlas dashboards` → `pull MTD` → `forecast · anomalies · audit gate` → `action plan (P1 Acquisition · P2 Reactivation)` → **passive:** suggest to `Telegram · Confluence · dashboard` → **active (on `/confirm`):** stage `DRAFT in CRM`.
 
 ### Stack
 ![GreenNode](https://img.shields.io/badge/GreenNode-AgentBase%20%2B%20MaaS-16a34a)

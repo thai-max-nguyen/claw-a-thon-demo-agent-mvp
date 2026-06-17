@@ -99,6 +99,18 @@ Whichever way it runs, the agent publishes to a **live dashboard** — agent hea
 
 </div>
 
+## 🚀 From one marketer to the whole growth team
+A tool the marketer reaches for **every day** — and a system a leader can confidently **scale across the department**:
+
+| 🧑‍💼 For the growth marketer — *daily* | 🏢 For the CEO — *scale* |
+|---|---|
+| 2–3 hrs → **under 20 min**, every morning | the **same senior-analyst rigor for every marketer** — no key-person risk |
+| **plain-language `/adjust`** — no SQL, no waiting on an analyst | **runs itself** on a cron — wider coverage, **zero added headcount** |
+| **ready-to-send** campaigns, not just charts | **cheap to run** — deterministic math + a small model; tokens spent only where they add value |
+| every number **traces to live data** | **safe to scale** — audit-gate + draft-only + human-approve = governance built in |
+
+→ One brain today covers **4 mobility merchants**. The same engine drops onto any team with dashboards + a CRM — **more merchants, more verticals, one consistent playbook.** That's the path from a single morning brief to a **department-wide growth co-pilot.**
+
 ## 🌓 A morning, before & after
 
 <img src="docs/before-after.png" alt="Before: manual, messy, exhausting — After: automated, smart, superpowers" width="100%"/>

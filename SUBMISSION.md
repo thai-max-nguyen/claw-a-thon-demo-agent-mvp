@@ -19,7 +19,7 @@
 1. **Agent ACTIVE on AgentBase** — ✅ **ACTIVE**. Runtime `growth-assistant` (`runtime-8437757a`), model `google/gemma-4-31b-it`. Deployed via the official GreenNode AgentBase skill (IAM auth + `--from-cr`).
 2. **Public GitHub repo + README** — ✅ public, polished README. Repo: https://github.com/thai-max-nguyen/claw-a-thon-demo-agent-mvp
 3. **Demo video <3 min** — ✅ SharePoint (shared to @vng.com.vn): https://vngms-my.sharepoint.com/:f:/g/personal/khailt_vng_com_vn/IgCTlgAV8wZbRqKThgshpnFaAYrSFh-8P-mibf8jWZVlnBM?e=q9X2Ca
-4. **Live endpoint (responds in incognito)** — ✅ `/health` → `{"status":"ok"}` 200: https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn
+4. **Live endpoint (responds in incognito)** — ✅ `/health` → `{"status":"ok"}` 200: https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn — the bare URL redirects to a **live monitoring dashboard** at `/dashboard` (KPI tiles, progress charts, agent health, staged campaigns).
 
 ## CRM realization (demonstrated, draft-only)
 4 DRAFT notifications created in the Zalopay CRM tool, mapped 1:1 to the agent's Action Plan (verified `INACTIVE`):

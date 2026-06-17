@@ -4,9 +4,10 @@ Long-polls Telegram getUpdates, routes slash commands, replies via sendMessage.
 Works in groups with privacy mode ON (it only sees /commands).
 
 Commands:
-  /run      -> full daily analysis (pull → forecast → anomalies → action plan + CRM drafts)
-  /confirm  -> stage the proposed noti as DRAFT in the CRM tool (you review, then publish)
-  /help     -> usage
+  /run            -> full analysis (pull → forecast → anomalies → action plan + proposed campaigns)
+  /adjust <text>  -> revise the proposal before staging (e.g. "Grab 30K, drop Be")
+  /confirm        -> stage the LATEST proposal as DRAFT in the CRM (you review, then publish)
+  /help           -> usage
 
 Env (from .env): TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID. Token read from env ONLY.
 """
@@ -25,12 +26,10 @@ HELP = (
     "/help — this message"
 )
 
-# in-memory hand-off between /run and /confirm (single-process long-poll bot)
+# in-memory hand-off between /run, /adjust and /confirm (single-process long-poll bot)
 PENDING = {}
 
-# the 4 DRAFT notis already staged in CRM, keyed by action identity
 CRM_LINK = "https://office.zalopay.vn/ge/crm/tool/asset-management/notifications"
-NOTI_IDS = {"Grab": 16550, "_ACQ": 16559, "XANH SM": 16560, "Be": 16561}
 
 
 def run_e2e() -> dict:
@@ -145,7 +144,7 @@ def main() -> None:
     if not TOKEN:
         raise SystemExit("TELEGRAM_BOT_TOKEN not set (see .env)")
     offset = None
-    print(f"bridge up — agent={AGENT_URL}")
+    print("bridge up — polling Telegram for /run · /adjust · /confirm")
     while True:
         try:
             params = {"timeout": 30}

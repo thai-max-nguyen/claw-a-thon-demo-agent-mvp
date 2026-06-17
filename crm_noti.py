@@ -500,9 +500,3 @@ def run(biz, seg, merch, post=False, do_confirm=False, dry_run=True):
 
 
 import urllib.parse  # noqa: E402 (used by segment_exists)
-
-if __name__ == "__main__":
-    # demo with a sample data shape (no network unless --post)
-    import sys
-    sample_biz = {"MPU": {"value": 548636}, "NPU": {"value": 3026, "change": -0.002}}
-    p = run(sample_biz, {}, {}, post="--post" in sys.argv, do_confirm="--confirm" in sys.argv)

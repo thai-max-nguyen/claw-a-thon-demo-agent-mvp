@@ -104,7 +104,7 @@ Whichever way it runs, the agent publishes to a **live dashboard** — agent hea
 | Pull the data | manual, 4 browser tabs, ~1h | automatic, in seconds |
 | Forecast & risk | spreadsheet guesswork | pacing model + 4-tier alerts |
 | Find the lever | scroll & eyeball | named, prioritized actions |
-| Build campaigns | from scratch | drafted in CRM, 1-tap publish |
+| Build campaigns | from scratch | drafted in CRM, ready to review & publish |
 
 ## 🧠 The analysis behind it (not a dumb export)
 The agent thinks like a senior growth analyst — every output traces back to live data:

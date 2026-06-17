@@ -4,8 +4,7 @@
 # if the session is dead or the audit fails, mbs_growth.py aborts without sending.
 cd /Users/lap15964/clawathon-demo/claw-a-thon-demo-agent || exit 1
 set -a
-[ -f .env ] && source .env
-export TELEGRAM_GROUP_ID=-1004359235496
+[ -f .env ] && source .env   # provides TELEGRAM_BOT_TOKEN + TELEGRAM_GROUP_ID (gitignored)
 set +a
 echo "===== run $(date '+%Y-%m-%d %H:%M:%S') ====="
 # self-heal the Atlas session first: opens Chrome + auto-clicks VNG SSO (no creds;

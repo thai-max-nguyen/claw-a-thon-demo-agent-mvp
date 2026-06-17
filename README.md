@@ -13,7 +13,11 @@
 [![Endpoint live](https://img.shields.io/badge/endpoint-live%20%E2%9C%93%20·%20open%20dashboard-22c55e?style=flat-square)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)
 ![Model](https://img.shields.io/badge/model-gemma--4--31b--it-f59e0b?style=flat-square)
 
+[![Open the live dashboard](https://img.shields.io/badge/🔴%20Open%20the%20LIVE%20dashboard-0045FF?style=for-the-badge)](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard)
+&nbsp;&nbsp;
 [![Watch the 2-min demo](https://img.shields.io/badge/▶%20Watch%20the%202--min%20demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://vngms-my.sharepoint.com/:f:/g/personal/khailt_vng_com_vn/IgCTlgAV8wZbRqKThgshpnFaAYrSFh-8P-mibf8jWZVlnBM?e=q9X2Ca)
+
+**👆 No install needed — [open the live dashboard](https://endpoint-4718fb93-6ff0-48fb-8723-f999e547970a.agentbase-runtime.aiplatform.vngcloud.vn/dashboard) in any browser to see the agent running right now.**
 
 ### ⭐ Like it? Give us a **star** and a **vote** — *Team Summer Lubu* 💜
 

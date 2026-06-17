@@ -57,22 +57,11 @@ The brief lands in the team chat **and** on a Confluence page anyone can read �
 When you're ready to act, drive it from Telegram (or a terminal): ask for the latest with **`/run`**, **tune the plan in plain language** with **`/adjust`** until it's right, then **`/confirm`** — it stages the **latest** version as **DRAFT** in the CRM. The agent proposes; you always approve.
 
 ```mermaid
-sequenceDiagram
-  actor M as Marketer
-  participant A as Growth Assistant
-  participant X as Atlas + MaaS
-  participant C as Zalopay CRM
-  M->>A: /run
-  A->>X: pull · forecast · anomalies · audit · narrative
-  X-->>A: insight
-  A-->>M: brief + proposed campaigns
-  M->>A: /adjust Grab 30K · drop Be
-  A-->>M: revised plan — the latest version
-  Note over M,A: tune it as many times as you like
-  M->>A: /confirm
-  A->>C: stage the LATEST plan as DRAFT
-  A-->>M: embedded content (title · body · deeplinks)
-  M->>C: review & publish
+flowchart LR
+  R["1 · run<br/>pull · analyse · propose"] --> J["2 · adjust<br/>tune offer · drop merchant"]
+  J --> J
+  J --> K["3 · confirm<br/>stage the LATEST as DRAFT"]
+  K --> P["you review and publish"]
 ```
 
 > 💡 **Why `/adjust` matters:** `/confirm` always stages the **latest tuned plan**, never the raw pull — so your feedback (a smaller offer, a dropped merchant, a sharper focus) is exactly what lands in the CRM. `/adjust Grab 30K, drop Be` retiers Grab's offer and removes Be in one line.
@@ -235,13 +224,10 @@ Today the agent is dashboard-bound — it only claims what the dashboards can pr
 ```mermaid
 flowchart LR
   A["4 Atlas dashboards"] --> B["Pull MTD"]
-  B --> G["Audit gate<br/>fail · abort and never send"]
-  B --> C["Forecast · pacing"]
-  C --> D["Anomalies · 4-tier"]
-  D --> E["Action plan<br/>P1 Acquisition · P2 Reactivation"]
-  E --> F["CRM drafts<br/>segment · A·B noti"]
-  G --> H["Telegram · Confluence"]
-  F --> H
+  B --> C["Forecast · anomalies · audit gate"]
+  C --> E["Action plan<br/>P1 Acquisition · P2 Reactivation"]
+  E --> S["Passive · suggest<br/>Telegram · Confluence · dashboard"]
+  S --> K["Active · on confirm<br/>stage DRAFT in CRM"]
 ```
 
 ### Stack
